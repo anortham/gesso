@@ -33,8 +33,12 @@ if ((install == 1)); then
     if [[ $arg == *.* ]]; then
       continue
     fi
-    printf '%s\n' '#!/bin/bash' 'exit 0' >"$stub/$arg"
-    chmod +x "$stub/$arg"
+    name=$arg
+    if [[ $arg == "helix" ]]; then
+      name=hx
+    fi
+    printf '%s\n' '#!/bin/bash' 'exit 0' >"$stub/$name"
+    chmod +x "$stub/$name"
   done
 fi
 exit 0
@@ -42,13 +46,41 @@ EOF
   cat >"$stub/flatpak" <<'EOF'
 #!/bin/bash
 printf '%s\n' "$(basename "$0") $*" >>"$HOME/gesso-stub.log"
-stub=$HOME/gesso-stubs
+state=$HOME/.local/state/gesso-flatpak
+mkdir -p "$state"
+install=0
+info=0
 for arg in "$@"; do
-  if [[ $arg == "com.google.Chrome" ]]; then
-    printf '%s\n' '#!/bin/bash' 'exit 0' >"$stub/google-chrome"
-    chmod +x "$stub/google-chrome"
+  if [[ $arg == "install" ]]; then
+    install=1
+  fi
+  if [[ $arg == "info" ]]; then
+    info=1
   fi
 done
+if ((install == 1)); then
+  for arg in "$@"; do
+    if [[ $arg == "install" || $arg == "-y" || $arg == "flathub" ]]; then
+      continue
+    fi
+    if [[ $arg == -* ]]; then
+      continue
+    fi
+    printf '%s\n' "" >"$state/$arg"
+  done
+  exit 0
+fi
+if ((info == 1)); then
+  for arg in "$@"; do
+    if [[ $arg == "info" || $arg == -* ]]; then
+      continue
+    fi
+    if [[ -f $state/$arg ]]; then
+      exit 0
+    fi
+  done
+  exit 1
+fi
 exit 0
 EOF
   cat >"$stub/xdg-settings" <<'EOF'

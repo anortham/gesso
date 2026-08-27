@@ -1,0 +1,42 @@
+#!/bin/bash
+# gesso:summary=Exit 0 if a catalog app is on the host or as Flatpak
+# gesso:hidden=true
+# gesso:args=[--desktop] <id>
+
+set -euo pipefail
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  printf 'Usage: gesso-app-present [--desktop] <id>\n'
+  exit 0
+fi
+
+desktop=0
+if [[ ${1:-} == "--desktop" ]]; then
+  desktop=1
+  shift
+fi
+
+if (($# != 1)); then
+  printf 'Usage: gesso-app-present [--desktop] <id>\n' >&2
+  exit 1
+fi
+
+id=$1
+app_cmd=$(gesso-catalog-get "$id" command)
+
+if [[ -n $app_cmd ]] && gesso-cmd-present "$app_cmd"; then
+  if ((desktop == 1)); then
+    gesso-catalog-get "$id" desktop_id
+  fi
+  exit 0
+fi
+
+app_flatpak=$(gesso-catalog-get "$id" flatpak)
+if [[ -n $app_flatpak ]] && flatpak info "$app_flatpak" >/dev/null 2>&1; then
+  if ((desktop == 1)); then
+    printf '%s.desktop\n' "$app_flatpak"
+  fi
+  exit 0
+fi
+
+exit 1

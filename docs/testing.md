@@ -28,7 +28,7 @@ Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write 
 
 Never call real `dnf`, `flatpak`, `pkexec`, `sudo`, `xdg-settings`, `plasma-apply-colorscheme`, `gsettings`, or `mise` in unit tests. Drop executable stubs in the test `PATH` that append argv to `$HOME/gesso-stub.log`.
 
-`gesso_test_init` stubs include `dnf`, `flatpak`, `sudo`, `pkexec`, `xdg-settings`, `notify-send`, and `mise`. The `dnf` and `flatpak` stubs also create a fake command so a later present-check succeeds. The `sudo` stub logs and execs the rest of argv. The `mise` stub logs argv and, when an argument contains `grok`, writes a fake `grok` command.
+`gesso_test_init` stubs include `dnf`, `flatpak`, `sudo`, `pkexec`, `xdg-settings`, `notify-send`, and `mise`. The `dnf` stub creates a host binary named after each package, except `helix`, which creates `hx` and never a `helix` binary. The `flatpak` stub records ids under `$HOME/.local/state/gesso-flatpak/`. `flatpak install` records the id. `flatpak info` exits 0 only for a recorded id. It never creates a host binary such as `google-chrome`. The `sudo` stub logs and execs the rest of argv. The `mise` stub logs argv and, when an argument contains `grok`, writes a fake `grok` command.
 
 `GESSO_THEME_HEADLESS=1` skips session retints. Theme tests that check generated files still run the stager.
 

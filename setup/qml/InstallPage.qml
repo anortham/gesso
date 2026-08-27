@@ -80,12 +80,8 @@ Kirigami.ScrollablePage {
         app.label = label
     }
 
-    var commandResult = gessoCli.runBinary("gesso-catalog-get", [id, "command"])
-    if (!recordError(commandResult)) {
-      var command = commandResult.stdout.trim()
-      var presentResult = gessoCli.runBinary("gesso-cmd-present", [command])
-      app.present = presentResult.exitCode == 0
-    }
+    var presentResult = gessoCli.runBinary("gesso-app-present", [id])
+    app.present = presentResult.exitCode == 0
 
     return app
   }

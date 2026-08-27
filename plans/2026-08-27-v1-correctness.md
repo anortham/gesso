@@ -112,12 +112,12 @@ Commit mode: `serial-worker-commit`. After `./test/cli` is green, commit owned f
 **Approach:** Follow `gesso-cmd-present` / `gesso-catalog-get` style. Presence: host command, else `flatpak info "$flatpak"`. `--desktop`: host `desktop_id` if host present, else `<flatpak>.desktop`. `gesso-pkg-add` uses app-present before and after each backend. Browser/terminal GET must recognize both catalog `desktop_id` and `<flatpak>.desktop` so `gesso default browser` prints `chrome` after a Flatpak install. dnf stub: package `helix` creates `hx`, not `helix`; other packages still create a same-named host binary. flatpak stub: record ids under `$HOME/.local/state/gesso-flatpak/`; `install` records; `info` exits 0 only for recorded ids; never create `google-chrome`. QML present checks call `gesso-app-present` with the catalog id. Leave the mise stub unchanged.
 
 **Acceptance criteria:**
-- [ ] `gesso pkg add chrome` succeeds with no `google-chrome` on PATH when Flatpak id `com.google.Chrome` is recorded
-- [ ] `gesso default browser chrome` runs `xdg-settings set default-web-browser com.google.Chrome.desktop` and later `gesso default browser` prints `chrome`
-- [ ] `gesso pkg add helix` makes `gesso-app-present helix` exit 0 via `hx`
-- [ ] DefaultsPage and InstallPage use `gesso-app-present` with the app id
-- [ ] Existing firefox/dnf tests still pass
-- [ ] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
+- [x] `gesso pkg add chrome` succeeds with no `google-chrome` on PATH when Flatpak id `com.google.Chrome` is recorded
+- [x] `gesso default browser chrome` runs `xdg-settings set default-web-browser com.google.Chrome.desktop` and later `gesso default browser` prints `chrome`
+- [x] `gesso pkg add helix` makes `gesso-app-present helix` exit 0 via `hx`
+- [x] DefaultsPage and InstallPage use `gesso-app-present` with the app id
+- [x] Existing firefox/dnf tests still pass
+- [x] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
 
 ### Task 2: Agents
 
