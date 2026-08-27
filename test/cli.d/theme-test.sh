@@ -146,11 +146,16 @@ backup=$(cat "$HOME/.local/state/gesso/vscode-colorCustomizations.json")
 [[ $backup == *"#111111"* ]] || fail "backup stores previous colorCustomizations" "$backup"
 pass "VS Code settings.json merges colorCustomizations and keeps unrelated keys"
 
+gesso theme set tokyo-night
+backup=$(cat "$HOME/.local/state/gesso/vscode-colorCustomizations.json")
+[[ $backup == *"#111111"* ]] || fail "second apply keeps original colorCustomizations backup" "$backup"
 gesso theme restore
 settings=$(cat "$HOME/.config/Code/User/settings.json")
 [[ $settings == *"editor.fontSize"* ]] || fail "restore keeps unrelated key" "$settings"
 [[ $settings == *"#111111"* ]] || fail "restore puts previous colorCustomizations back" "$settings"
-pass "theme restore restores VS Code colorCustomizations backup"
+[[ $settings == *"#1a1b26"* ]] && fail "set-set-restore does not leave Gesso editor.background" "$settings"
+[[ -f $HOME/.local/state/gesso/vscode-colorCustomizations.json ]] && fail "restore consumes VS Code colorCustomizations backup"
+pass "set-set-restore restores original VS Code colors"
 
 mkdir -p "$HOME/.config/gesso/hooks"
 printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$1" >"$HOME/gesso-hook.out"' >"$HOME/.config/gesso/hooks/theme-set-record"
@@ -166,3 +171,23 @@ pass "second apply exits 0"
 scheme=$(cat "$HOME/.local/share/konsole/Gesso.colorscheme")
 [[ $scheme == *Description=Gesso* ]] || fail "Konsole scheme named Gesso" "$scheme"
 pass "Konsole scheme named Gesso"
+
+sed -i 's/^background = .*/background = "#000000"/' "$HOME/.config/gesso/themes/other-night/colors.toml"
+printf '%s\n' '{ not json' >"$HOME/.config/Code/User/settings.json"
+if gesso theme set other-night >/tmp/gesso-theme-set-vscode-fail 2>&1; then
+  fail "invalid settings.json exits non-zero"
+fi
+name_got=$(cat "$name_file")
+[[ $name_got == "tokyo-night" ]] || fail "invalid settings.json leaves theme.name as tokyo-night" "$name_got"
+scheme=$(cat "$HOME/.local/share/konsole/Gesso.colorscheme")
+[[ $scheme == *"26,27,38"* ]] || fail "invalid settings.json leaves Konsole on tokyo-night RGB" "$scheme"
+settings=$(cat "$HOME/.config/Code/User/settings.json")
+[[ $settings == *'{ not json'* ]] || fail "invalid settings.json is not clobbered" "$settings"
+pass "invalid settings.json fails without changing live Konsole"
+
+printf '%s\n' '{' '  // comment' '  "editor.fontSize": 14,' '  "workbench.colorCustomizations": {"editor.background": "#111111"},' '}' >"$HOME/.config/Code/User/settings.json"
+gesso theme set tokyo-night
+settings=$(cat "$HOME/.config/Code/User/settings.json")
+[[ $settings == *"editor.fontSize"* ]] || fail "JSONC settings.json keeps unrelated key" "$settings"
+[[ $settings == *"#1a1b26"* ]] || fail "JSONC settings.json merged editor.background" "$settings"
+pass "JSONC settings.json with comment and trailing comma still merges"

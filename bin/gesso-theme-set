@@ -74,16 +74,99 @@ toml_quoted() {
 
 merge_vscode() {
   local theme_json=$1
+  local staged_path=$2
   local settings_path=$HOME/.config/Code/User/settings.json
   local backup_path=$HOME/.local/state/gesso/vscode-colorCustomizations.json
-  python3 - "$theme_json" "$settings_path" "$backup_path" <<'PY'
+  python3 - "$theme_json" "$settings_path" "$backup_path" "$staged_path" <<'PY'
 import json
 import sys
 from pathlib import Path
 
+
+def strip_jsonc(text):
+    without_comments = []
+    i = 0
+    n = len(text)
+    in_string = False
+    escape = False
+    while i < n:
+        ch = text[i]
+        if in_string:
+            without_comments.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            without_comments.append(ch)
+            i += 1
+            continue
+        if ch == "/" and i + 1 < n:
+            nxt = text[i + 1]
+            if nxt == "/":
+                i += 2
+                while i < n and text[i] not in "\n\r":
+                    i += 1
+                continue
+            if nxt == "*":
+                i += 2
+                while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                    i += 1
+                i = min(i + 2, n)
+                continue
+        without_comments.append(ch)
+        i += 1
+    stripped = "".join(without_comments)
+    out = []
+    i = 0
+    n = len(stripped)
+    in_string = False
+    escape = False
+    while i < n:
+        ch = stripped[i]
+        if in_string:
+            out.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == ",":
+            j = i + 1
+            while j < n and stripped[j] in " \t\r\n":
+                j += 1
+            if j < n and stripped[j] in "}]":
+                i += 1
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def load_jsonc(text):
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return json.loads(strip_jsonc(text))
+
+
 theme_path = Path(sys.argv[1])
 settings_path = Path(sys.argv[2])
 backup_path = Path(sys.argv[3])
+staged_path = Path(sys.argv[4])
 
 try:
     theme = json.loads(theme_path.read_text())
@@ -98,7 +181,7 @@ if not isinstance(colors, dict):
 
 if settings_path.exists():
     try:
-        settings = json.loads(settings_path.read_text())
+        settings = load_jsonc(settings_path.read_text())
     except json.JSONDecodeError:
         sys.stderr.write("invalid settings.json\n")
         sys.exit(1)
@@ -108,14 +191,13 @@ if settings_path.exists():
 else:
     settings = {}
 
-prev = settings.get("workbench.colorCustomizations", None)
-backup_path.parent.mkdir(parents=True, exist_ok=True)
-backup_path.write_text(json.dumps(prev) + "\n")
+if not backup_path.exists():
+    prev = settings.get("workbench.colorCustomizations", None)
+    backup_path.parent.mkdir(parents=True, exist_ok=True)
+    backup_path.write_text(json.dumps(prev) + "\n")
 
 settings["workbench.colorCustomizations"] = colors
-tmp = settings_path.with_name(settings_path.name + ".tmp")
-tmp.write_text(json.dumps(settings, indent=2) + "\n")
-tmp.replace(settings_path)
+staged_path.write_text(json.dumps(settings, indent=2) + "\n")
 PY
 }
 
@@ -151,12 +233,16 @@ fi
 
 live_colors=$HOME/.local/share/color-schemes/Gesso.colors
 aside=
+vscode_staged=
 fail_publish() {
   if [[ -n $aside ]]; then
     cp "$aside" "$live_colors"
     rm -f "$aside"
   else
     rm -f "$live_colors"
+  fi
+  if [[ -n $vscode_staged ]]; then
+    rm -f "$vscode_staged"
   fi
   rm -rf "$next"
   if (($# > 0)); then
@@ -183,6 +269,13 @@ if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
   fi
 fi
 
+if [[ -f $next/vscode.json && -d $HOME/.config/Code/User ]]; then
+  vscode_staged=$(mktemp "$HOME/.local/state/gesso/settings.json.XXXXXX")
+  if ! merge_vscode "$next/vscode.json" "$vscode_staged"; then
+    fail_publish
+  fi
+fi
+
 mkdir -p "$HOME/.local/share/konsole" "$HOME/.config"
 if [[ -f $next/Gesso.colorscheme ]]; then
   cp "$next/Gesso.colorscheme" "$HOME/.local/share/konsole/Gesso.colorscheme"
@@ -204,11 +297,10 @@ if [[ -f $next/kitty.conf ]]; then
     cp "$next/kitty.conf" "$HOME/.config/kitty/gesso-theme.conf"
   fi
 fi
-if [[ -f $next/vscode.json && -d $HOME/.config/Code/User ]]; then
+if [[ -n $vscode_staged ]]; then
   cp "$next/vscode.json" "$HOME/.config/Code/User/gesso-theme.json"
-  if ! merge_vscode "$HOME/.config/Code/User/gesso-theme.json"; then
-    fail_publish
-  fi
+  mv "$vscode_staged" "$HOME/.config/Code/User/settings.json"
+  vscode_staged=
 fi
 
 rm -rf "$current"

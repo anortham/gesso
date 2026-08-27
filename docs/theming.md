@@ -53,7 +53,7 @@ Canonical names win if a legacy `bg` / `fg` pair is also present. Derived: `sele
 3. Build `~/.local/state/gesso/current/next-theme` from the first-party theme, then overlay the user theme. Require `mode` (`dark` or `light`), `accent`, `background`, and `foreground`.
 4. Render `$GESSO_PATH/default/themed/*.tpl` and `~/.config/gesso/themed/*.tpl` (user templates win on output filename). Do not overwrite a file the theme already shipped. If any file in next-theme still contains `{{`, delete next-theme and exit 1.
 5. Write `~/.local/share/color-schemes/Gesso.colors`. When a session is available, keep the previous file aside and run `plasma-apply-colorscheme Gesso`. On failure, restore the aside file, delete next-theme, and leave `current/theme` unchanged.
-6. Copy Konsole, Kitty, and VS Code live files from next-theme. When `~/.config/Code/User` exists, write `gesso-theme.json` and merge its `colors` into `settings.json` `workbench.colorCustomizations`. Backup the previous value (JSON `null` if the key was absent) to `~/.local/state/gesso/vscode-colorCustomizations.json`. Invalid `settings.json` is a hard error.
+6. When `~/.config/Code/User` exists, parse `settings.json` (JSON or JSONC: comments and trailing commas) and stage the merged `workbench.colorCustomizations` before copying Konsole or Kitty live files. Invalid `settings.json` is a hard error and does not change those live files. Gesso rewrites `settings.json` as JSON, so comments are not kept. On success, copy Konsole, Kitty, and VS Code live files from next-theme, write `gesso-theme.json`, and publish the staged merge. Write the previous `workbench.colorCustomizations` value (JSON `null` if the key was absent) to `~/.local/state/gesso/vscode-colorCustomizations.json` only if that backup does not already exist.
 7. Swap next-theme to `~/.local/state/gesso/current/theme` and write `theme.name`.
 8. Set GTK `org.gnome.desktop.interface color-scheme` to `prefer-dark` or `prefer-light` from `mode`.
 9. Retint a running Kitty when `kitten` is on `PATH`. Missing binaries are skipped, not errors.
@@ -61,7 +61,7 @@ Canonical names win if a legacy `bg` / `fg` pair is also present. Derived: `sele
 
 Headless / tests set `GESSO_THEME_HEADLESS=1` and skip Plasma, GTK, and live retints. Validation, file swap, and the VS Code `settings.json` merge still run.
 
-`gesso theme restore` writes the backed-up `workbench.colorCustomizations` key (or deletes it if the backup is JSON `null`) when the backup file exists, then applies `BreezeDark` or `Breeze` from the last theme `mode`.
+`gesso theme restore` writes the backed-up `workbench.colorCustomizations` key (or deletes it if the backup is JSON `null`) when the backup file exists, then deletes the backup file, then applies `BreezeDark` or `Breeze` from the last theme `mode`.
 
 `gesso theme set` is idempotent. A second apply of the same theme must not fail.
 

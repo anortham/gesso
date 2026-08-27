@@ -48,6 +48,7 @@ tmp = settings_path.with_name(settings_path.name + ".tmp")
 tmp.write_text(json.dumps(settings, indent=2) + "\n")
 tmp.replace(settings_path)
 PY
+  rm -f "$backup"
 fi
 
 name_file=$HOME/.local/state/gesso/current/theme.name
