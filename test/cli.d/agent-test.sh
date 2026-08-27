@@ -56,3 +56,22 @@ gesso default agent grok
 log=$(cat "$HOME/gesso-stub.log" 2>/dev/null || true)
 [[ $log == *"mise use"* ]] && fail "second default agent grok skips mise" "$log"
 pass "default agent grok is idempotent when present"
+
+rm -f "$HOME/.config/gesso/defaults/agent"
+if gesso agent >/tmp/gesso-agent-none 2>&1; then
+  fail "agent without default exits non-zero"
+fi
+none=$(cat /tmp/gesso-agent-none)
+[[ $none == *"gesso default agent"* ]] || fail "agent unset message" "$none"
+pass "agent without default exits non-zero"
+
+gesso default agent grok
+out=$(GESSO_AGENT_DRY_RUN=1 gesso agent)
+[[ $out == *"argv="*"grok"* ]] || fail "dry-run argv has grok" "$out"
+[[ $out == *bypassPermissions* ]] || fail "dry-run has skip-prompt flag" "$out"
+pass "agent dry-run prints grok launch argv"
+
+mkdir -p "$HOME/Work"
+out=$(cd "$HOME" && GESSO_AGENT_DRY_RUN=1 gesso agent)
+[[ $out == *"cwd=$HOME/Work"* ]] || fail "launch from HOME uses Work" "$out"
+pass "launch from HOME uses Work"

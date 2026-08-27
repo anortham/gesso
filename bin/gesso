@@ -27,6 +27,7 @@ Commands:
   default editor   Set or print the default editor
   default agent    Set or print the default coding agent
   pkg add          Install a catalog app
+  agent            Launch the default coding agent
   setup            Open Gesso Setup
   commands         List commands
 

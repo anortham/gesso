@@ -1,0 +1,66 @@
+#!/bin/bash
+# gesso:summary=Launch the default coding agent
+# gesso:args=
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso agent\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+agent_file=$HOME/.config/gesso/defaults/agent
+id=""
+if [[ -f $agent_file ]]; then
+  id=$(cat "$agent_file")
+fi
+if [[ -z $id ]]; then
+  printf 'Choose a default agent with: gesso default agent <name>\n' >&2
+  exit 1
+fi
+
+prompt=""
+if (($# > 0)) && [[ $1 == "--" ]]; then
+  shift
+  if (($# > 0)); then
+    prompt="$*"
+  fi
+fi
+
+launch=$(gesso-agent-get "$id" launch)
+read -r -a argv <<< "$launch"
+
+if [[ -n $prompt ]]; then
+  prompt_launch=$(gesso-agent-get "$id" prompt_launch)
+  if [[ -n $prompt_launch ]]; then
+    read -r -a argv <<< "$prompt_launch"
+  else
+    prompt_flag=$(gesso-agent-get "$id" prompt_flag)
+    if [[ -n $prompt_flag ]]; then
+      argv+=("$prompt_flag")
+    fi
+  fi
+  argv+=("$prompt")
+fi
+
+bin=${argv[0]}
+if ! gesso-cmd-present "$bin"; then
+  printf '%s is not installed\n' "$bin" >&2
+  exit 1
+fi
+
+if [[ $PWD == $HOME && -d $HOME/Work ]]; then
+  cd "$HOME/Work"
+fi
+
+if [[ -n ${GESSO_AGENT_DRY_RUN:-} ]]; then
+  printf 'cwd=%s\n' "$PWD"
+  printf 'argv=%s\n' "${argv[*]}"
+  exit 0
+else
+  exec "${argv[@]}"
+fi
