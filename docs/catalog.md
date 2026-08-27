@@ -1,0 +1,71 @@
+# Catalogs
+
+Install, default-app, and agent rows come from data files. The Setup app and the CLI read the same files. Do not hard-code package names in QML or in `case` lists that duplicate the catalog.
+
+Phase 0 has no catalog. These shapes are locked so phase 2 and 4 do not invent a second format.
+
+## `data/apps.toml`
+
+One table per app. `id` is the Gesso name used on the CLI (`gesso default browser firefox`).
+
+```toml
+[[app]]
+id = "firefox"
+kind = "browser"          # browser | terminal | editor | extra
+label = "Firefox"
+glyph = "󰈹"
+desktop_id = "firefox.desktop"
+command = "firefox"
+dnf = ["firefox"]
+flatpak = "org.mozilla.firefox"
+```
+
+Rules:
+
+- `kind` decides which default command owns the row (`gesso default browser` only lists `kind = "browser"`).
+- `dnf` is tried first, in order. If every RPM is missing from Fedora/RPM Fusion and `flatpak` is set, install that Flatpak.
+- `command` is what `gesso-cmd-present` checks before offering install.
+- `desktop_id` is what `xdg-settings set default-web-browser` (browsers) or `xdg-terminals.list` (terminals) gets.
+- Editors write `id` to `~/.local/state/gesso/defaults/editor`. The launch command is `command`.
+
+v1 browser ids: `firefox`, `chromium`, `chrome`, `brave`, `edge`. Terminal ids: `konsole`, `ghostty`, `kitty`, `foot`. Editor ids: `code`, `kate`, `nvim`, `helix`, `zed`.
+
+Do not add a row without a tested install path on Fedora 44.
+
+## `data/agents.toml`
+
+```toml
+[[agent]]
+id = "grok"
+label = "Grok"
+mise = "npm:@xai-official/grok"
+launch = ["grok", "--permission-mode", "bypassPermissions"]
+prompt_flag = "--"
+```
+
+- No agent is default until the user runs `gesso default agent <id>`.
+- Install is `mise use -g <mise>`.
+- Launch cwd: if `$PWD` is `$HOME` and `$HOME/Work` exists, `cd` there (agents refuse to trust `$HOME`).
+- `gesso agent` with none chosen exits 1 and prints `gesso default agent <name>`. The Setup app opens the Agents page instead.
+
+Launch flags (keep in the TOML, not in a `case`):
+
+| id | skip-prompt shape |
+|---|---|
+| claude | `--permission-mode auto` |
+| grok | `--permission-mode bypassPermissions` |
+| codex | `--approve-for-me` |
+| opencode | `--auto` |
+| copilot | `--allow-all` |
+| crush | `--yolo` / `crush run` when a prompt is passed |
+
+## Install-then-default
+
+For defaults and extra apps:
+
+1. If `command` is on `PATH`, skip install.
+2. Else run `gesso pkg add` for `dnf`, or Flatpak, as the row says.
+3. Then set the default (XDG or state file).
+4. Notify with `label`.
+
+The Setup GUI must not implement a second installer. It calls `gesso default browser firefox` and `gesso pkg add …`.
