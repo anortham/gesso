@@ -3,7 +3,7 @@
 **Status:** Complete
 **Plan:** plans/2026-08-27-phase-4.md
 **Branch:** phase-4-agents
-**PR:** pending — filled in after PR creation
+**PR:** https://github.com/anortham/gesso/pull/5
 **Duration:** about 30 minutes
 **Phases:** 1/1 complete
 **Tasks:** 5/5 complete
@@ -33,5 +33,5 @@ External review: none (not requested for this run).
 - None.
 
 ## Next steps
-- Review PR: pending — filled in after PR creation
+- Review PR: https://github.com/anortham/gesso/pull/5
 - Do not start phase 5 until this is green on `main`.
