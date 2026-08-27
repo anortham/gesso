@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+export ROOT
+export GESSO_PATH=$ROOT
+export HOME=$(mktemp -d)
+export PATH="$ROOT/bin:$PATH"
+
+pass() {
+  printf 'ok - %s\n' "$1"
+}
+
+fail() {
+  printf 'not ok - %s\n' "$1" >&2
+  if (($# > 1)); then
+    printf '%s\n' "$2" >&2
+  fi
+  exit 1
+}
+
+if [[ ! -x $ROOT/bin/gesso ]]; then
+  fail "bin/gesso is executable" "phase 0 router is missing"
+fi
+
+pass "bin/gesso is executable"
