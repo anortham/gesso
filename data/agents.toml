@@ -1,0 +1,44 @@
+[[agent]]
+id = "grok"
+label = "Grok"
+mise = "npm:@xai-official/grok"
+launch = ["grok", "--permission-mode", "bypassPermissions"]
+prompt_flag = "--"
+
+[[agent]]
+id = "claude"
+label = "Claude"
+mise = "claude"
+launch = ["claude", "--permission-mode", "auto"]
+prompt_flag = "--"
+
+[[agent]]
+id = "codex"
+label = "Codex"
+mise = "codex"
+launch = ["codex", "--approve-for-me"]
+
+[[agent]]
+id = "opencode"
+label = "OpenCode"
+mise = "opencode"
+launch = ["opencode", "--auto"]
+
+[[agent]]
+id = "copilot"
+label = "Copilot"
+mise = "copilot"
+launch = ["copilot", "--allow-all"]
+
+[[agent]]
+id = "crush"
+label = "Crush"
+mise = "crush"
+launch = ["crush", "--yolo"]
+prompt_launch = ["crush", "run"]
+
+[[agent]]
+id = "pi"
+label = "Pi"
+mise = "pi"
+launch = ["pi"]
