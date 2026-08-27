@@ -1,0 +1,34 @@
+#!/bin/bash
+# gesso:summary=Restore Breeze if Gesso last applied a color scheme
+# gesso:args=
+
+set -euo pipefail
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  printf 'Usage: gesso theme restore\n'
+  exit 0
+fi
+
+name_file=$HOME/.local/state/gesso/current/theme.name
+if [[ ! -f $name_file ]]; then
+  exit 0
+fi
+
+scheme=BreezeDark
+colors=$HOME/.local/state/gesso/current/theme/colors.toml
+if [[ -f $colors ]]; then
+  mode=$(grep -E '^mode[[:space:]]*=' "$colors" | head -n1 | cut -d'"' -f2) || true
+  if [[ $mode == "light" ]]; then
+    scheme=Breeze
+  fi
+fi
+
+if [[ -n ${GESSO_THEME_HEADLESS:-} ]]; then
+  exit 0
+fi
+
+if ! command -v plasma-apply-colorscheme >/dev/null; then
+  printf 'plasma-apply-colorscheme is not available\n' >&2
+  exit 1
+fi
+plasma-apply-colorscheme "$scheme"
