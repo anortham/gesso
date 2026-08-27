@@ -50,3 +50,16 @@ for cmd in "$ROOT/bin"/gesso-*; do
   fi
 done
 pass "every gesso-* command has summary metadata"
+
+theme_cmds=$(gesso theme 2>&1) || fail "gesso theme exits 0" "$theme_cmds"
+[[ $theme_cmds == *"theme list"* ]] || fail "gesso theme lists theme list" "$theme_cmds"
+[[ $theme_cmds == *"theme set"* ]] || fail "gesso theme lists theme set" "$theme_cmds"
+[[ $theme_cmds == *"theme current"* ]] || fail "gesso theme lists theme current" "$theme_cmds"
+[[ $theme_cmds == *"theme restore"* ]] || fail "gesso theme lists theme restore" "$theme_cmds"
+[[ $theme_cmds != *set-templates* ]] || fail "gesso theme omits hidden set-templates" "$theme_cmds"
+pass "gesso theme lists non-hidden theme commands"
+
+current_out=$(gesso theme current -- --help 2>&1) || fail "gesso theme current -- --help exits 0" "$current_out"
+[[ $current_out != *Usage* ]] || fail "-- after leftover stops the help scan" "$current_out"
+[[ $current_out == "unset" ]] || fail "gesso theme current -- --help prints the current theme" "$current_out"
+pass "leftover -- stops the help scan"

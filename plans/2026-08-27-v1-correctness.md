@@ -226,10 +226,10 @@ Commit mode: `serial-worker-commit`. After `./test/cli` is green, commit owned f
 **Approach:** Help scan: leftover `--` stops the `-h`/`--help` scan; a `--help` after `--` is passed through to the command. Bare group: if no binary matches and one word is a group with children, print that group's non-hidden commands (`theme list`, `theme set`, …) and exit 0. Tests: `gesso theme` includes list/set/current/restore and excludes `set-templates`; `gesso theme set -- --help` runs `gesso-theme-set` with those args instead of the router help path. Keep this small. Product.md: Theme page is a list plus Apply; applied retints are Plasma, Konsole, GTK prefer-dark/light, Kitty if present, VS Code colorCustomizations if User exists; Install page is catalog browsers/terminals/editors; `theme install` and `pkg drop` are later. Do not implement those later items.
 
 **Acceptance criteria:**
-- [ ] `gesso theme` exits 0 and lists list/set/current/restore, not hidden templates
-- [ ] `--` stops the router help scan
-- [ ] Product brief no longer claims live preview, Ghostty/Foot/browser chrome, extra services, `theme install`, or `pkg drop` as v1
-- [ ] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
+- [x] `gesso theme` exits 0 and lists list/set/current/restore, not hidden templates
+- [x] `--` stops the router help scan
+- [x] Product brief no longer claims live preview, Ghostty/Foot/browser chrome, extra services, `theme install`, or `pkg drop` as v1
+- [x] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
 
 ### Task 6: Packaging checklist
 

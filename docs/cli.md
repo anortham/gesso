@@ -16,11 +16,11 @@ gesso theme set foo
   probe gesso-theme-set     ← hit, leftover arg: foo
 ```
 
-If no filename matches, load metadata headers and resolve against `# gesso:name=` / `# gesso:group=` / aliases. Phase 0 only needs the fast path plus `--help`.
+If no filename matches and the only argument is a group with non-hidden children, print that group's commands and exit 0. Hidden commands stay callable and stay out of listings.
 
-`--help` / `-h` anywhere in the leftover arguments shows help and must not run the command. A `--` ends that scan.
+`--help` / `-h` anywhere in the leftover arguments shows help and must not run the command. A `--` ends that scan. `--help` after `--` is passed through to the command.
 
-A bare group with children (`gesso theme`) prints that group's commands. A command whose `args` metadata has a required token, invoked with no args, prints usage instead of running.
+A command whose `args` metadata has a required token, invoked with no args, prints usage instead of running.
 
 ## Metadata
 
@@ -75,7 +75,7 @@ Do not fall back to `$HOME`.
 ```
 gesso --help
 gesso commands
-gesso theme --help
+gesso theme
 gesso theme list --help
 gesso theme current
 gesso theme restore
