@@ -1,0 +1,54 @@
+#!/bin/bash
+# gesso:summary=Set or print the default coding agent
+# gesso:args=[id]
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso default agent [id]\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+agent_file=$HOME/.config/gesso/defaults/agent
+
+if (($# == 0)); then
+  if [[ -f $agent_file ]]; then
+    current=$(cat "$agent_file")
+    if [[ -n $current ]]; then
+      printf '%s\n' "$current"
+      exit 0
+    fi
+  fi
+  printf 'unset\n'
+  exit 0
+fi
+
+id=$1
+if mise=$(gesso-agent-get "$id" mise 2>/dev/null); then
+  :
+else
+  printf 'Unknown agent: %s\n' "$id" >&2
+  exit 1
+fi
+
+launch=$(gesso-agent-get "$id" launch)
+label=$(gesso-agent-get "$id" label)
+launch_bin=${launch%% *}
+
+if ! gesso-cmd-present "$launch_bin"; then
+  if ! mise use -g "$mise"; then
+    printf 'Could not install %s with mise\n' "$label" >&2
+    exit 1
+  fi
+fi
+
+mkdir -p "$(dirname "$agent_file")"
+printf '%s\n' "$id" > "$agent_file"
+
+if command -v notify-send >/dev/null; then
+  notify-send "$label is now the default coding agent"
+fi
