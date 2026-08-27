@@ -75,3 +75,38 @@ stub=$(cat "$HOME/gesso-stub.log")
 [[ $stub == *"gsettings set org.gnome.desktop.interface color-scheme prefer-dark"* ]] || fail "gsettings prefer-dark logged" "$stub"
 pass "non-headless stubs record Plasma and GTK"
 export GESSO_THEME_HEADLESS=1
+
+[[ -f $HOME/.local/share/konsole/Gesso.colorscheme ]] || fail "Konsole scheme live path"
+[[ -f $HOME/.local/share/konsole/Gesso.profile ]] || fail "Konsole profile exists"
+profile=$(cat "$HOME/.local/share/konsole/Gesso.profile")
+[[ $profile == *ColorScheme=Gesso* ]] || fail "Konsole profile ColorScheme" "$profile"
+krc=$(cat "$HOME/.config/konsolerc")
+[[ $krc == *DefaultProfile=Gesso.profile* ]] || fail "konsolerc DefaultProfile" "$krc"
+pass "Konsole scheme and profile applied"
+
+mkdir -p "$HOME/.config/kitty"
+gesso theme set tokyo-night
+[[ -f $HOME/.config/kitty/gesso-theme.conf ]] || fail "Kitty gesso-theme.conf copied when config dir exists"
+[[ -f $HOME/.config/kitty/kitty.conf ]] && fail "does not write kitty.conf"
+pass "Kitty theme file copied without clobbering kitty.conf"
+
+mkdir -p "$HOME/.config/Code/User"
+gesso theme set tokyo-night
+[[ -f $HOME/.config/Code/User/gesso-theme.json ]] || fail "VS Code gesso-theme.json when User dir exists"
+[[ -f $HOME/.config/Code/User/settings.json ]] && fail "does not write settings.json"
+pass "VS Code theme JSON copied without settings.json"
+
+mkdir -p "$HOME/.config/gesso/hooks"
+printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$1" >"$HOME/gesso-hook.out"' >"$HOME/.config/gesso/hooks/theme-set-record"
+chmod +x "$HOME/.config/gesso/hooks/theme-set-record"
+gesso theme set tokyo-night
+hook=$(cat "$HOME/gesso-hook.out")
+[[ $hook == "tokyo-night" ]] || fail "hook receives theme name" "$hook"
+pass "theme-set hook runs with theme name"
+
+gesso theme set tokyo-night
+pass "second apply exits 0"
+
+scheme=$(cat "$HOME/.local/share/konsole/Gesso.colorscheme")
+[[ $scheme == *Description=Gesso* ]] || fail "Konsole scheme named Gesso" "$scheme"
+pass "Konsole scheme named Gesso"

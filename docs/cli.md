@@ -2,7 +2,7 @@
 
 `bin/gesso` maps spaced commands onto `bin/gesso-*`. There is no registry file. Every executable `bin/gesso-*` is a command. Its filename is the default route.
 
-`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set "Tokyo Night"` becomes `exec bin/gesso-theme-set "Tokyo Night"`.
+`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`.
 
 ## Resolution
 
@@ -48,7 +48,7 @@ Unknown keys are ignored. A missing summary fails `./test/cli` metadata lint.
 | `agent` | Launch and select coding agents |
 | `setup` | Open the Kirigami Setup app |
 
-Phase 0 implements the router and `gesso theme list` only.
+Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`.
 
 ## `$GESSO_PATH`
 

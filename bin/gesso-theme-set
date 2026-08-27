@@ -63,6 +63,31 @@ if [[ -f $current/Gesso.colors ]]; then
   cp "$current/Gesso.colors" "$HOME/.local/share/color-schemes/Gesso.colors"
 fi
 
+mkdir -p "$HOME/.local/share/konsole" "$HOME/.config"
+if [[ -f $current/Gesso.colorscheme ]]; then
+  cp "$current/Gesso.colorscheme" "$HOME/.local/share/konsole/Gesso.colorscheme"
+fi
+printf '%s\n' '[Appearance]' 'ColorScheme=Gesso' '' '[General]' 'Name=Gesso' >"$HOME/.local/share/konsole/Gesso.profile"
+if [[ -f $HOME/.config/konsolerc ]]; then
+  if grep -q '^DefaultProfile=' "$HOME/.config/konsolerc"; then
+    sed -i 's/^DefaultProfile=.*/DefaultProfile=Gesso.profile/' "$HOME/.config/konsolerc"
+  else
+    printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Gesso.profile' >>"$HOME/.config/konsolerc"
+  fi
+else
+  printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Gesso.profile' >"$HOME/.config/konsolerc"
+fi
+
+if [[ -f $current/kitty.conf ]]; then
+  if command -v kitty >/dev/null || [[ -d $HOME/.config/kitty ]]; then
+    mkdir -p "$HOME/.config/kitty"
+    cp "$current/kitty.conf" "$HOME/.config/kitty/gesso-theme.conf"
+  fi
+fi
+if [[ -f $current/vscode.json && -d $HOME/.config/Code/User ]]; then
+  cp "$current/vscode.json" "$HOME/.config/Code/User/gesso-theme.json"
+fi
+
 mode=$(grep -E '^mode[[:space:]]*=' "$current/colors.toml" | head -n1 | cut -d'"' -f2)
 
 if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
@@ -79,4 +104,14 @@ if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
     fi
   fi
 fi
+
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]] && command -v kitty >/dev/null && command -v kitten >/dev/null; then
+  kitten @ set-colors --all "$HOME/.config/kitty/gesso-theme.conf" >/dev/null 2>&1 || true
+fi
+
+shopt -s nullglob
+for hook in "$HOME/.config/gesso/hooks"/theme-set*; do
+  [[ -x $hook ]] || continue
+  "$hook" "$name"
+done
 

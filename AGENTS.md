@@ -2,15 +2,15 @@
 
 A Fedora KDE add-on. One palette, install-then-set-default, and a coding-agent picker. Not a distro. Not Hyprland.
 
-Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. The next code to write is [`plans/2026-08-26-phase-0.md`](plans/2026-08-26-phase-0.md).
+Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. The next code to write is [`plans/2026-08-26-phase-1.md`](plans/2026-08-26-phase-1.md).
 
 ## Start here (new session)
 
 1. Product brief: `plans/2026-08-26-product.md`
 2. This file
 3. `docs/layout.md`, `docs/cli.md`, `docs/theming.md`, `docs/testing.md`
-4. Implement phase 0 from `plans/2026-08-26-phase-0.md`
-5. Do not start phase 1 until `./test/all` passes on the phase 0 tree
+4. Implement phase 1 from `plans/2026-08-26-phase-1.md`
+5. Do not start phase 2 until `./test/all` is green
 
 Omarchy (`~/source/omarchy`) is a behavior reference. Steal ideas. Do not copy trees, names, Hyprland, or Quickshell.
 
@@ -58,7 +58,7 @@ See [`docs/testing.md`](docs/testing.md).
 
 - `./test/cli` — router, metadata, theme list/set against a fake `$HOME`
 - `./test/all` — runs `./test/cli` (more suites later)
-- New command tests: `test/cli.d/<area>-test.sh` once that layout exists; until then keep router tests in `./test/cli`
+- New command tests: `test/cli.d/<area>-test.sh`
 - No Plasma, no DBus, no `dnf` in unit tests. Stub binaries on `PATH`.
 
 ## Hard no

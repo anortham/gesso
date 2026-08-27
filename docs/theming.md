@@ -2,7 +2,7 @@
 
 A theme is a directory named in lowercase-with-hyphens that contains `colors.toml`. First-party themes live in `$GESSO_PATH/themes/<name>/`. User themes live in `~/.config/gesso/themes/<name>/` and overlay the first-party directory of the same name when both exist.
 
-Phase 0 only lists themes. Phase 1 renders templates and applies Plasma.
+Phase 0 only lists themes. Phase 1 renders templates and applies Plasma, Konsole, Kitty, and VS Code files.
 
 ## `colors.toml`
 
@@ -61,6 +61,17 @@ Headless / tests set `GESSO_THEME_HEADLESS=1` and skip Plasma, GTK, and retints.
 
 `gesso theme set` is idempotent. A second apply of the same theme must not fail.
 
+## Live destinations (phase 1)
+
+| Template | Output basename | Live destination after swap |
+|---|---|---|
+| `Gesso.colors.tpl` | `Gesso.colors` | `~/.local/share/color-schemes/Gesso.colors` |
+| `Gesso.colorscheme.tpl` | `Gesso.colorscheme` | `~/.local/share/konsole/Gesso.colorscheme` |
+| `kitty.conf.tpl` | `kitty.conf` | `~/.config/kitty/gesso-theme.conf` when `kitty` is on `PATH` or `~/.config/kitty` already exists; otherwise staged theme only |
+| `vscode.json.tpl` | `vscode.json` | `~/.config/Code/User/gesso-theme.json` when that `User` directory exists; otherwise staged theme only |
+
+Gesso does not replace the user's main Kitty or VS Code config. It does not write `kitty.conf` or `settings.json`. Users may `include gesso-theme.conf` from their own Kitty config.
+
 ## Plasma mapping (phase 1)
 
 Generate `~/.local/share/color-schemes/Gesso.colors`. Keep one scheme name (`Gesso`) so Apply always replaces the previous Gesso scheme rather than accumulating copies.
@@ -80,7 +91,7 @@ Do not ship a custom SVG Plasma theme in v1. Color scheme plus wallpaper (option
 
 ## Konsole (phase 1)
 
-Write `~/.local/share/konsole/Gesso.colorscheme` from a template. Point the default profile's `ColorScheme=Gesso` only if the user has not pinned another scheme; if that detection is messy, document "apply from Setup" and set it anyway in v1, with a note in help.
+Write `~/.local/share/konsole/Gesso.colorscheme` from a template. Phase 1 also writes `~/.local/share/konsole/Gesso.profile` with `ColorScheme=Gesso` and sets `DefaultProfile=Gesso.profile` in `~/.config/konsolerc`.
 
 ## First-party themes
 
