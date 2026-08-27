@@ -43,3 +43,18 @@ if grep -Eq 'firefox\.desktop|org\.mozilla\.firefox' "$ROOT/setup/qml/DefaultsPa
   fail "DefaultsPage has no hardcoded firefox ids"
 fi
 pass "DefaultsPage uses catalog CLI"
+
+[[ -f $ROOT/setup/org.gesso.setup.desktop ]] || fail "desktop file exists"
+desktop=$(cat "$ROOT/setup/org.gesso.setup.desktop")
+[[ $desktop == *'Exec=gesso setup'* ]] || fail "desktop Exec is gesso setup" "$desktop"
+pass "desktop Exec is gesso setup"
+
+[[ -f $ROOT/setup/qml/AgentsPage.qml ]] || fail "AgentsPage.qml exists"
+if grep -Eq 'mise|gesso agent' "$ROOT/setup/qml/AgentsPage.qml"; then
+  fail "Agents page does not install agents"
+fi
+pass "Agents page is empty state"
+
+hits=$(grep -REq 'firefox\.desktop|org\.mozilla\.firefox|org\.chromium\.Chromium|com\.google\.Chrome' "$ROOT/setup" && echo yes || echo no)
+[[ $hits == "no" ]] || fail "setup tree has no hardcoded catalog ids"
+pass "setup tree has no hardcoded catalog ids"

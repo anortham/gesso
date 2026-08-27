@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Gesso Setup
+Exec=gesso setup
+Terminal=false
+Categories=Settings;DesktopSettings;
+StartupNotify=true

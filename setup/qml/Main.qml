@@ -58,15 +58,13 @@ Kirigami.ApplicationWindow {
 
   Component {
     id: agentsPage
-    Kirigami.Page {
-      title: "Agents"
+    AgentsPage {
     }
   }
 
   Component {
     id: installPage
-    Kirigami.Page {
-      title: "Install"
+    InstallPage {
     }
   }
 

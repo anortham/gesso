@@ -36,6 +36,8 @@ qt_add_resources(gesso-setup gesso_setup_qml
     qml/Main.qml
     qml/ThemePage.qml
     qml/DefaultsPage.qml
+    qml/InstallPage.qml
+    qml/AgentsPage.qml
 )
 
 target_link_libraries(gesso-setup PRIVATE
