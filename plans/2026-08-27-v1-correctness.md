@@ -141,11 +141,11 @@ Commit mode: `serial-worker-commit`. After `./test/cli` is green, commit owned f
 **Approach:** Rewrite the mise stub: `mise use -g` records the spec; `mise which <bin>` and `mise exec --` succeed only after that record; do not write `grok` into the stub PATH. `gesso-cmd-present grok` stays 1. `gesso default agent` uses `mise which`, not `gesso-cmd-present`. After a failed which, run `mise use -g` and recheck; do not write the default file if which still fails. Launch: if `command -v mise`, exec `mise exec -- "${argv[@]}"`. Dry-run prints that argv. Tests: grok is not on PATH after default-agent; dry-run contains `mise exec --`; Codex catalog line contains `--ask-for-approval never`; spec text contains `Recommends: gesso-agents` on the plasma package.
 
 **Acceptance criteria:**
-- [ ] Default agent does not write `~/.config/gesso/defaults/agent` when `mise which` fails
-- [ ] After a successful grok default, `gesso-cmd-present grok` is still 1 and `GESSO_AGENT_DRY_RUN=1 gesso agent` includes `mise exec --` and `grok`
-- [ ] Codex launch field is `codex --ask-for-approval never`
-- [ ] `packaging/gesso.spec` plasma package Recommends `gesso-agents`
-- [ ] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
+- [x] Default agent does not write `~/.config/gesso/defaults/agent` when `mise which` fails
+- [x] After a successful grok default, `gesso-cmd-present grok` is still 1 and `GESSO_AGENT_DRY_RUN=1 gesso agent` includes `mise exec --` and `grok`
+- [x] Codex launch field is `codex --ask-for-approval never`
+- [x] `packaging/gesso.spec` plasma package Recommends `gesso-agents`
+- [x] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
 
 ### Task 3: Setup async
 

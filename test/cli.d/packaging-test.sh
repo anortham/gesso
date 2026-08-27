@@ -49,6 +49,7 @@ export GESSO_THEME_HEADLESS=1
 [[ -f $ROOT/packaging/gesso.spec ]] || fail "gesso.spec exists"
 spec=$(cat "$ROOT/packaging/gesso.spec")
 [[ $spec == *"%package plasma"* ]] || fail "spec has plasma subpackage"
+[[ $spec == *"%package plasma"*Recommends:\ gesso-agents*"%description plasma"* ]] || fail "plasma Recommends gesso-agents"
 [[ $spec == *"%package agents"* ]] || fail "spec has agents subpackage"
 [[ $spec == *"Name: gesso"* ]] || fail "spec Name is gesso"
 [[ $spec == *"/etc/"* ]] && fail "spec must not ship /etc"

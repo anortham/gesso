@@ -104,13 +104,36 @@ EOF
   cat >"$stub/mise" <<'EOF'
 #!/bin/bash
 printf '%s\n' "$(basename "$0") $*" >>"$HOME/gesso-stub.log"
+state=$HOME/.local/state/gesso-mise
+mkdir -p "$state"
 if [[ ${1:-} == "use" ]]; then
   for arg in "$@"; do
-    if [[ $arg == *grok* ]]; then
-      printf '%s\n' '#!/bin/bash' 'exit 0' >"$HOME/gesso-stubs/grok"
-      chmod +x "$HOME/gesso-stubs/grok"
+    if [[ $arg == "use" || $arg == -* ]]; then
+      continue
     fi
+    bin=${arg##*/}
+    printf '%s\n' "$arg" >"$state/$bin"
   done
+  exit 0
+fi
+if [[ ${1:-} == "which" ]]; then
+  bin=${2:-}
+  if [[ -n $bin && -f $state/$bin ]]; then
+    printf '%s\n' "$state/$bin"
+    exit 0
+  fi
+  exit 1
+fi
+if [[ ${1:-} == "exec" ]]; then
+  shift
+  if [[ ${1:-} == "--" ]]; then
+    shift
+  fi
+  bin=${1:-}
+  if [[ -n $bin && -f $state/$bin ]]; then
+    exit 0
+  fi
+  exit 1
 fi
 exit 0
 EOF

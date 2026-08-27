@@ -16,7 +16,7 @@ prompt_flag = "--"
 id = "codex"
 label = "Codex"
 mise = "codex"
-launch = ["codex", "--approve-for-me"]
+launch = ["codex", "--ask-for-approval", "never"]
 
 [[agent]]
 id = "opencode"

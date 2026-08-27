@@ -47,7 +47,9 @@ prompt_flag = "--"
 ```
 
 - No agent is default until the user runs `gesso default agent <id>`.
-- Install is `mise use -g <mise>`.
+- If `mise` is missing, `gesso default agent` installs it with `dnf install -y mise`.
+- If `mise which <launch_bin>` fails, install is `mise use -g <mise>`. Recheck `mise which`. Write the default file only after that check succeeds.
+- Launch is `mise exec -- <launch...>` when `mise` is on PATH. Else the host binary.
 - Launch cwd: if `$PWD` is `$HOME` and `$HOME/Work` exists, `cd` there (agents refuse to trust `$HOME`).
 - `gesso agent` with none chosen exits 1 and prints `gesso default agent <name>`. The Setup app opens the Agents page instead.
 
@@ -57,7 +59,7 @@ Launch flags (keep in the TOML, not in a `case`):
 |---|---|
 | claude | `--permission-mode auto` |
 | grok | `--permission-mode bypassPermissions` |
-| codex | `--approve-for-me` |
+| codex | `--ask-for-approval never` |
 | opencode | `--auto` |
 | copilot | `--allow-all` |
 | crush | `--yolo` / `crush run` when a prompt is passed |
