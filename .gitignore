@@ -1,6 +1,8 @@
 .miller/
 .worktrees/
 .razorback/
+.cache/
+.local/
 *.swp
 *~
 .DS_Store
