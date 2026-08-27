@@ -6,10 +6,10 @@ Non-graphical tests must run on a machine with no Plasma session. That includes 
 
 | Command | Owns |
 |---|---|
-| `./test/cli` | Router, metadata lint, theme list/set, and default/pkg against a fake `$HOME` |
+| `./test/cli` | Router, metadata lint, theme list/set, default/pkg, and setup against a fake `$HOME` |
 | `./test/all` | Runs `./test/cli`, later other suites, continues after a failure, non-zero if any failed |
 
-There is no graphical acceptance suite in v1. Do not open a nested Plasma to prove theme set. File generation plus a stub `plasma-apply-colorscheme` on `PATH` is the proof.
+There is no graphical acceptance suite in v1. Do not open a nested Plasma to prove theme set. File generation plus a stub `plasma-apply-colorscheme` on `PATH` is the proof. Setup tests do not open a window and do not run cmake.
 
 ## Contract
 
@@ -22,7 +22,7 @@ Each suite sources `test/lib.sh` and calls `gesso_test_init`, which:
 - Puts a stub directory and `$ROOT/bin` first on `PATH`
 - Uses `pass "description"` / `fail "description"` (first fail exits the suite)
 
-Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write a user theme overlay without affecting `test/cli.d/theme-test.sh`. Default and pkg tests live in `test/cli.d/default-test.sh`.
+Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write a user theme overlay without affecting `test/cli.d/theme-test.sh`. Default and pkg tests live in `test/cli.d/default-test.sh`. Setup tests live in `test/cli.d/setup-test.sh`. They cover `gesso theme current`, `gesso setup --help`, a missing binary, and a grep that QML has no hardcoded catalog ids. The suite does not open a window. The suite does not run cmake.
 
 ## Stubs
 

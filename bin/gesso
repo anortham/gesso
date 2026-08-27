@@ -21,10 +21,12 @@ Usage: gesso <command> [args]
 Commands:
   theme list       List available themes
   theme set        Apply a Gesso theme
+  theme current    Print the current theme name
   default browser  Set or print the default browser
   default terminal Set or print the default terminal
   default editor   Set or print the default editor
   pkg add          Install a catalog app
+  setup            Open Gesso Setup
   commands         List commands
 
 Use gesso <command> --help for a command's usage.

@@ -2,15 +2,15 @@
 
 A Fedora KDE add-on. One palette, install-then-set-default, and a coding-agent picker. Not a distro. Not Hyprland.
 
-Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. Phase 2 is done. Do not write the phase 3 plan until `./test/all` is green.
+Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. Phase 3 is done. Do not start phase 4 until `./test/all` is green.
 
 ## Start here (new session)
 
 1. Product brief: `plans/2026-08-26-product.md`
 2. This file
 3. `docs/layout.md`, `docs/cli.md`, `docs/catalog.md`, `docs/theming.md`, `docs/testing.md`
-4. Phase 2 is done (`plans/2026-08-27-phase-2.md`)
-5. Do not start phase 3 until `./test/all` is green on this tree
+4. Phase 3 is done (`plans/2026-08-27-phase-3.md`)
+5. Do not start phase 4 until `./test/all` is green on this tree
 
 Omarchy (`~/source/omarchy`) is a behavior reference. Steal ideas. Do not copy trees, names, Hyprland, or Quickshell.
 
@@ -56,7 +56,7 @@ Metadata lives in the first 80 comment lines of each `bin/gesso-*` file:
 
 See [`docs/testing.md`](docs/testing.md).
 
-- `./test/cli` — router, metadata, theme list/set, default apps, and pkg add against a fake `$HOME`
+- `./test/cli` — router, metadata, theme list/set, default apps, pkg add, and setup against a fake `$HOME`
 - `./test/all` — runs `./test/cli` (more suites later)
 - New command tests: `test/cli.d/<area>-test.sh`
 - No Plasma, no DBus, no `dnf` in unit tests. Stub binaries on `PATH`.

@@ -2,7 +2,7 @@
 
 `bin/gesso` maps spaced commands onto `bin/gesso-*`. There is no registry file. Every executable `bin/gesso-*` is a command. Its filename is the default route.
 
-`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`. `gesso default browser firefox` becomes `exec bin/gesso-default-browser firefox`. `gesso pkg add firefox` becomes `exec bin/gesso-pkg-add firefox`.
+`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`. `gesso theme current` becomes `exec bin/gesso-theme-current`. `gesso default browser firefox` becomes `exec bin/gesso-default-browser firefox`. `gesso pkg add firefox` becomes `exec bin/gesso-pkg-add firefox`. `gesso setup` becomes `exec bin/gesso-setup`.
 
 ## Resolution
 
@@ -48,11 +48,15 @@ Unknown keys are ignored. A missing summary fails `./test/cli` metadata lint.
 | `agent` | Launch and select coding agents |
 | `setup` | Open the Kirigami Setup app |
 
-Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`.
+Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`. Phase 3 adds `gesso setup` and `gesso theme current`.
+
+`gesso theme current` prints the name in `~/.local/state/gesso/current/theme.name`, or `unset` when that file is missing or empty.
 
 `gesso default browser firefox` installs Firefox when it is missing, then sets the XDG default browser to `firefox.desktop`. `gesso default terminal [id]` and `gesso default editor [id]` use the same catalog loop for `xdg-terminals.list` and `~/.local/state/gesso/defaults/editor`. No id prints the current catalog id, or `unset`.
 
 `gesso pkg add firefox` installs that catalog row: dnf first, then Flatpak if dnf is empty or the command is still missing. Skip install when the catalog `command` is already on `PATH`. Ids match `data/apps.toml` (`firefox`, not `Firefox`).
+
+`gesso setup` opens the Kirigami Setup window. `--help` works with no Qt. If the compiled binary is missing, stderr prints `cmake -S setup -B setup/build && cmake --build setup/build` and the command exits 1. The window has Theme, Defaults, Install, and Agents pages. Every action execs `gesso-*`. The Agents page is an empty state. Phase 4 adds the agent command.
 
 ## `$GESSO_PATH`
 
@@ -67,9 +71,12 @@ gesso --help
 gesso commands
 gesso theme --help
 gesso theme list --help
+gesso theme current
 gesso default browser --help
 gesso default browser firefox
 gesso pkg add firefox
+gesso setup --help
+gesso setup
 ```
 
 `gesso commands --json` is optional until something needs to parse it. Phase 0 can print text only.
