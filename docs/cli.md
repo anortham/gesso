@@ -2,7 +2,7 @@
 
 `bin/gesso` maps spaced commands onto `bin/gesso-*`. There is no registry file. Every executable `bin/gesso-*` is a command. Its filename is the default route.
 
-`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`. `gesso theme current` becomes `exec bin/gesso-theme-current`. `gesso default browser firefox` becomes `exec bin/gesso-default-browser firefox`. `gesso pkg add firefox` becomes `exec bin/gesso-pkg-add firefox`. `gesso setup` becomes `exec bin/gesso-setup`.
+`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`. `gesso theme current` becomes `exec bin/gesso-theme-current`. `gesso default browser firefox` becomes `exec bin/gesso-default-browser firefox`. `gesso default agent grok` becomes `exec bin/gesso-default-agent grok`. `gesso pkg add firefox` becomes `exec bin/gesso-pkg-add firefox`. `gesso agent` becomes `exec bin/gesso-agent`. `gesso setup` becomes `exec bin/gesso-setup`.
 
 ## Resolution
 
@@ -43,12 +43,12 @@ Unknown keys are ignored. A missing summary fails `./test/cli` metadata lint.
 | Group | Purpose |
 |---|---|
 | `theme` | List, set, install themes |
-| `default` | Browser, terminal, editor |
+| `default` | Browser, terminal, editor, agent |
 | `pkg` | dnf / Flatpak helpers |
 | `agent` | Launch and select coding agents |
 | `setup` | Open the Kirigami Setup app |
 
-Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`. Phase 3 adds `gesso setup` and `gesso theme current`.
+Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`. Phase 3 adds `gesso setup` and `gesso theme current`. Phase 4 adds `gesso default agent` and `gesso agent`.
 
 `gesso theme current` prints the name in `~/.local/state/gesso/current/theme.name`, or `unset` when that file is missing or empty.
 
@@ -56,7 +56,11 @@ Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. 
 
 `gesso pkg add firefox` installs that catalog row: dnf first, then Flatpak if dnf is empty or the command is still missing. Skip install when the catalog `command` is already on `PATH`. Ids match `data/apps.toml` (`firefox`, not `Firefox`).
 
-`gesso setup` opens the Kirigami Setup window. `--help` works with no Qt. If the compiled binary is missing, stderr prints `cmake -S setup -B setup/build && cmake --build setup/build` and the command exits 1. The window has Theme, Defaults, Install, and Agents pages. Every action execs `gesso-*`. The Agents page is an empty state. Phase 4 adds the agent command.
+`gesso default agent grok` installs Grok with `mise use -g` when the launch binary is missing, then writes `grok` to `~/.config/gesso/defaults/agent`. No id prints the current id, or `unset`. Unknown ids exit 1 with `Unknown agent:`.
+
+`gesso agent` launches that default with the skip-prompt argv from `data/agents.toml`. With no default it exits 1 and prints `gesso default agent`. If `$PWD` is `$HOME` and `$HOME/Work` exists, launch changes to that directory. `GESSO_AGENT_DRY_RUN=1` prints `cwd=` and `argv=` instead of `exec`. Tests use that. Production launch uses `exec`.
+
+`gesso setup` opens the Kirigami Setup window. `--help` works with no Qt. If the compiled binary is missing, stderr prints `cmake -S setup -B setup/build && cmake --build setup/build` and the command exits 1. The window has Theme, Defaults, Install, and Agents pages. Every action execs `gesso-*`. The Agents page lists catalog ids, sets the default with `gesso default agent <id>`, and launches via Konsole when present.
 
 ## `$GESSO_PATH`
 
@@ -74,7 +78,10 @@ gesso theme list --help
 gesso theme current
 gesso default browser --help
 gesso default browser firefox
+gesso default agent --help
+gesso default agent grok
 gesso pkg add firefox
+gesso agent
 gesso setup --help
 gesso setup
 ```
