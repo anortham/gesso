@@ -2,7 +2,7 @@
 
 `bin/gesso` maps spaced commands onto `bin/gesso-*`. There is no registry file. Every executable `bin/gesso-*` is a command. Its filename is the default route.
 
-`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`.
+`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`. `gesso default browser firefox` becomes `exec bin/gesso-default-browser firefox`. `gesso pkg add firefox` becomes `exec bin/gesso-pkg-add firefox`.
 
 ## Resolution
 
@@ -48,7 +48,11 @@ Unknown keys are ignored. A missing summary fails `./test/cli` metadata lint.
 | `agent` | Launch and select coding agents |
 | `setup` | Open the Kirigami Setup app |
 
-Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`.
+Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`.
+
+`gesso default browser firefox` installs Firefox when it is missing, then sets the XDG default browser to `firefox.desktop`. `gesso default terminal [id]` and `gesso default editor [id]` use the same catalog loop for `xdg-terminals.list` and `~/.local/state/gesso/defaults/editor`. No id prints the current catalog id, or `unset`.
+
+`gesso pkg add firefox` installs that catalog row: dnf first, then Flatpak if dnf is empty or the command is still missing. Skip install when the catalog `command` is already on `PATH`. Ids match `data/apps.toml` (`firefox`, not `Firefox`).
 
 ## `$GESSO_PATH`
 
@@ -63,6 +67,9 @@ gesso --help
 gesso commands
 gesso theme --help
 gesso theme list --help
+gesso default browser --help
+gesso default browser firefox
+gesso pkg add firefox
 ```
 
 `gesso commands --json` is optional until something needs to parse it. Phase 0 can print text only.
