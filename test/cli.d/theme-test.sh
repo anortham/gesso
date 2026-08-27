@@ -36,7 +36,8 @@ pass "theme.name is tokyo-night"
 pass "staged colors.toml exists"
 
 mkdir -p "$HOME/.config/gesso/themes/tokyo-night"
-printf 'mode = "dark"\naccent = "#ff00aa"\n' >"$HOME/.config/gesso/themes/tokyo-night/colors.toml"
+cp "$ROOT/themes/tokyo-night/colors.toml" "$HOME/.config/gesso/themes/tokyo-night/colors.toml"
+sed -i 's/^accent = .*/accent = "#ff00aa"/' "$HOME/.config/gesso/themes/tokyo-night/colors.toml"
 gesso theme set tokyo-night
 overlay=$(cat "$HOME/.local/state/gesso/current/theme/colors.toml")
 [[ $overlay == *"#ff00aa"* ]] || fail "user overlay wins on colors.toml" "$overlay"
@@ -53,3 +54,24 @@ extra_got=$(cat "$extra")
 [[ $extra_got == *"rgb=255,0,170"* ]] || fail "user template rgb" "$extra_got"
 [[ $extra_got == *mix=#* ]] || fail "user template mix looks like hex" "$extra_got"
 pass "user template rendered with placeholders"
+
+[[ -f $HOME/.local/share/color-schemes/Gesso.colors ]] || fail "Gesso.colors live path"
+colors=$(cat "$HOME/.local/share/color-schemes/Gesso.colors")
+[[ $colors == *"26,27,38"* ]] || fail "Gesso.colors has tokyo-night window RGB" "$colors"
+[[ $colors == *Name=Gesso* ]] || fail "Gesso.colors Name=Gesso" "$colors"
+pass "Gesso.colors has tokyo-night window RGB"
+
+if [[ -f $HOME/gesso-stub.log ]]; then
+  fail "headless apply does not call session stubs" "$(cat "$HOME/gesso-stub.log")"
+fi
+pass "headless apply does not call session stubs"
+
+unset GESSO_THEME_HEADLESS
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night
+[[ -f $HOME/gesso-stub.log ]] || fail "non-headless stub log exists"
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-colorscheme Gesso"* ]] || fail "plasma-apply-colorscheme Gesso logged" "$stub"
+[[ $stub == *"gsettings set org.gnome.desktop.interface color-scheme prefer-dark"* ]] || fail "gsettings prefer-dark logged" "$stub"
+pass "non-headless stubs record Plasma and GTK"
+export GESSO_THEME_HEADLESS=1

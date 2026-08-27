@@ -57,3 +57,26 @@ gesso-theme-set-templates
 rm -rf "$current"
 mv "$next" "$current"
 printf '%s\n' "$name" >"$state_dir/theme.name"
+
+mkdir -p "$HOME/.local/share/color-schemes"
+if [[ -f $current/Gesso.colors ]]; then
+  cp "$current/Gesso.colors" "$HOME/.local/share/color-schemes/Gesso.colors"
+fi
+
+mode=$(grep -E '^mode[[:space:]]*=' "$current/colors.toml" | head -n1 | cut -d'"' -f2)
+
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
+  if ! command -v plasma-apply-colorscheme >/dev/null; then
+    printf 'plasma-apply-colorscheme is not available\n' >&2
+    exit 1
+  fi
+  plasma-apply-colorscheme Gesso
+  if command -v gsettings >/dev/null; then
+    if [[ $mode == "light" ]]; then
+      gsettings set org.gnome.desktop.interface color-scheme prefer-light || true
+    else
+      gsettings set org.gnome.desktop.interface color-scheme prefer-dark || true
+    fi
+  fi
+fi
+
