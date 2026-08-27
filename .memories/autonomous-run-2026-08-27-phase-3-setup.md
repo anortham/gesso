@@ -3,7 +3,7 @@
 **Status:** Complete
 **Plan:** plans/2026-08-27-phase-3.md
 **Branch:** phase-3-setup
-**PR:** pending — filled in after PR creation
+**PR:** https://github.com/anortham/gesso/pull/4
 **Duration:** about 50 minutes
 **Phases:** 1/1 complete
 **Tasks:** 6/6 complete
@@ -36,6 +36,6 @@ External review: none (not requested for this run).
 - None that stop the PR. GUI compile needs `kf6-kirigami-devel` and friends on a Fedora KDE box.
 
 ## Next steps
-- Review PR: pending — filled in after PR creation
+- Review PR: https://github.com/anortham/gesso/pull/4
 - On a Fedora KDE box: `cmake -S setup -B setup/build && cmake --build setup/build && gesso setup`
 - Do not start phase 4 until this is green on `main`.
