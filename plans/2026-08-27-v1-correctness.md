@@ -197,12 +197,12 @@ Commit mode: `serial-worker-commit`. After `./test/cli` is green, commit owned f
 **Approach:** Reject names that do not match `^[a-z0-9]+(-[a-z0-9]+)*$` with `Unknown theme:`. Resolve `realpath` and check prefix. Lock under `${XDG_RUNTIME_DIR:-$HOME/.local/state/gesso}/gesso-theme-set.lock`. After templates, if any rendered file contains `{{`, delete next-theme and exit 1. Non-headless: copy `Gesso.colors` aside, write new file, `plasma-apply-colorscheme Gesso`; on failure restore the aside file, `rm -rf` next-theme, exit 1 without moving current. Then copy Konsole/Kitty/VS Code live files and `mv` next to current. VS Code: keep `gesso-theme.json`; Python-merge `colors` into `settings.json` `workbench.colorCustomizations`; backup previous value (or a JSON null meaning absent). Invalid `settings.json` is a hard error. Restore reapplies the backup key then Breeze. Tests: `../foo`, `Tokyo Night`, leftover placeholder, failing plasma stub leaves previous `theme.name`; `settings.json` gains colorCustomizations and keeps unrelated keys; restore puts the old key back. Replace the assertion `does not write settings.json`.
 
 **Acceptance criteria:**
-- [ ] `gesso theme set ../foo` and `gesso theme set 'Tokyo Night'` exit 1 and do not create `current/theme`
-- [ ] A leftover `{{` in a rendered file fails and does not swap current
-- [ ] A failing `plasma-apply-colorscheme` after a successful tokyo-night leaves `theme.name` as `tokyo-night`
-- [ ] With `Code/User` present, `settings.json` contains merged `workbench.colorCustomizations` and a pre-existing unrelated key
-- [ ] `gesso theme restore` restores that backup key
-- [ ] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
+- [x] `gesso theme set ../foo` and `gesso theme set 'Tokyo Night'` exit 1 and do not create `current/theme`
+- [x] A leftover `{{` in a rendered file fails and does not swap current
+- [x] A failing `plasma-apply-colorscheme` after a successful tokyo-night leaves `theme.name` as `tokyo-night`
+- [x] With `Code/User` present, `settings.json` contains merged `workbench.colorCustomizations` and a pre-existing unrelated key
+- [x] `gesso theme restore` restores that backup key
+- [x] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
 
 ### Task 5: Router contract and claim edits
 

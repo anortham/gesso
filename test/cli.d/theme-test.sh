@@ -24,6 +24,22 @@ unknown=$(cat /tmp/gesso-theme-set-unknown)
 [[ $unknown == *"Unknown theme: not-a-theme"* ]] || fail "unknown theme message" "$unknown"
 pass "unknown theme exits non-zero"
 
+if gesso theme set ../foo >/tmp/gesso-theme-set-dotdot 2>&1; then
+  fail "path theme name exits non-zero"
+fi
+dotdot=$(cat /tmp/gesso-theme-set-dotdot)
+[[ $dotdot == *"Unknown theme: ../foo"* ]] || fail "path theme name message" "$dotdot"
+[[ -e $HOME/.local/state/gesso/current/theme ]] && fail "path theme name does not create current/theme"
+pass "rejects ../foo and does not create current/theme"
+
+if gesso theme set 'Tokyo Night' >/tmp/gesso-theme-set-space 2>&1; then
+  fail "spaced theme name exits non-zero"
+fi
+spaced=$(cat /tmp/gesso-theme-set-space)
+[[ $spaced == *"Unknown theme: Tokyo Night"* ]] || fail "spaced theme name message" "$spaced"
+[[ -e $HOME/.local/state/gesso/current/theme ]] && fail "spaced theme name does not create current/theme"
+pass "rejects Tokyo Night and does not create current/theme"
+
 export GESSO_THEME_HEADLESS=1
 gesso theme set tokyo-night
 name_file=$HOME/.local/state/gesso/current/theme.name
@@ -55,6 +71,17 @@ extra_got=$(cat "$extra")
 [[ $extra_got == *mix=#* ]] || fail "user template mix looks like hex" "$extra_got"
 pass "user template rendered with placeholders"
 
+printf 'oops={{ missing_key }}\n' >"$HOME/.config/gesso/themed/broken.conf.tpl"
+if gesso theme set tokyo-night >/tmp/gesso-theme-set-leftover 2>&1; then
+  fail "leftover placeholder exits non-zero"
+fi
+[[ -f $HOME/.local/state/gesso/current/theme/broken.conf ]] && fail "leftover placeholder does not swap current"
+name_got=$(cat "$name_file")
+[[ $name_got == "tokyo-night" ]] || fail "leftover placeholder leaves theme.name" "$name_got"
+[[ -f $HOME/.local/state/gesso/current/theme/extra.conf ]] || fail "leftover placeholder keeps previous current"
+rm -f "$HOME/.config/gesso/themed/broken.conf.tpl"
+pass "leftover placeholder fails and does not swap"
+
 [[ -f $HOME/.local/share/color-schemes/Gesso.colors ]] || fail "Gesso.colors live path"
 colors=$(cat "$HOME/.local/share/color-schemes/Gesso.colors")
 [[ $colors == *"26,27,38"* ]] || fail "Gesso.colors has tokyo-night window RGB" "$colors"
@@ -74,6 +101,22 @@ stub=$(cat "$HOME/gesso-stub.log")
 [[ $stub == *"plasma-apply-colorscheme Gesso"* ]] || fail "plasma-apply-colorscheme Gesso logged" "$stub"
 [[ $stub == *"gsettings set org.gnome.desktop.interface color-scheme prefer-dark"* ]] || fail "gsettings prefer-dark logged" "$stub"
 pass "non-headless stubs record Plasma and GTK"
+
+printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$(basename "$0") $*" >>"$HOME/gesso-stub.log"' 'exit 1' >"$HOME/gesso-stubs/plasma-apply-colorscheme"
+chmod +x "$HOME/gesso-stubs/plasma-apply-colorscheme"
+mkdir -p "$HOME/.config/gesso/themes/other-night"
+cp "$ROOT/themes/tokyo-night/colors.toml" "$HOME/.config/gesso/themes/other-night/colors.toml"
+if gesso theme set other-night >/tmp/gesso-theme-set-plasma-fail 2>&1; then
+  fail "failing plasma-apply-colorscheme exits non-zero"
+fi
+name_got=$(cat "$name_file")
+[[ $name_got == "tokyo-night" ]] || fail "failing plasma leaves theme.name as tokyo-night" "$name_got"
+[[ -f $HOME/.local/state/gesso/current/theme/colors.toml ]] || fail "failing plasma leaves current colors.toml"
+overlay=$(cat "$HOME/.local/state/gesso/current/theme/colors.toml")
+[[ $overlay == *"#ff00aa"* ]] || fail "failing plasma does not swap current" "$overlay"
+printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$(basename "$0") $*" >>"$HOME/gesso-stub.log"' 'exit 0' >"$HOME/gesso-stubs/plasma-apply-colorscheme"
+chmod +x "$HOME/gesso-stubs/plasma-apply-colorscheme"
+pass "failing plasma leaves theme.name as tokyo-night"
 export GESSO_THEME_HEADLESS=1
 
 [[ -f $HOME/.local/share/konsole/Gesso.colorscheme ]] || fail "Konsole scheme live path"
@@ -91,10 +134,23 @@ gesso theme set tokyo-night
 pass "Kitty theme file copied without clobbering kitty.conf"
 
 mkdir -p "$HOME/.config/Code/User"
+printf '%s\n' '{"editor.fontSize": 14, "workbench.colorCustomizations": {"editor.background": "#111111"}}' >"$HOME/.config/Code/User/settings.json"
 gesso theme set tokyo-night
 [[ -f $HOME/.config/Code/User/gesso-theme.json ]] || fail "VS Code gesso-theme.json when User dir exists"
-[[ -f $HOME/.config/Code/User/settings.json ]] && fail "does not write settings.json"
-pass "VS Code theme JSON copied without settings.json"
+settings=$(cat "$HOME/.config/Code/User/settings.json")
+[[ $settings == *"editor.fontSize"* ]] || fail "settings.json keeps unrelated key" "$settings"
+[[ $settings == *"workbench.colorCustomizations"* ]] || fail "settings.json has colorCustomizations" "$settings"
+[[ $settings == *"#1a1b26"* ]] || fail "settings.json merged editor.background" "$settings"
+[[ -f $HOME/.local/state/gesso/vscode-colorCustomizations.json ]] || fail "VS Code colorCustomizations backup exists"
+backup=$(cat "$HOME/.local/state/gesso/vscode-colorCustomizations.json")
+[[ $backup == *"#111111"* ]] || fail "backup stores previous colorCustomizations" "$backup"
+pass "VS Code settings.json merges colorCustomizations and keeps unrelated keys"
+
+gesso theme restore
+settings=$(cat "$HOME/.config/Code/User/settings.json")
+[[ $settings == *"editor.fontSize"* ]] || fail "restore keeps unrelated key" "$settings"
+[[ $settings == *"#111111"* ]] || fail "restore puts previous colorCustomizations back" "$settings"
+pass "theme restore restores VS Code colorCustomizations backup"
 
 mkdir -p "$HOME/.config/gesso/hooks"
 printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$1" >"$HOME/gesso-hook.out"' >"$HOME/.config/gesso/hooks/theme-set-record"

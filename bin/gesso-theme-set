@@ -24,7 +24,34 @@ if [[ -z ${GESSO_PATH:-} ]]; then
 fi
 
 name=$1
-if [[ ! -f $GESSO_PATH/themes/$name/colors.toml && ! -f $HOME/.config/gesso/themes/$name/colors.toml ]]; then
+if [[ ! $name =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+  printf 'Unknown theme: %s\n' "$name" >&2
+  exit 1
+fi
+
+builtin_dir=$GESSO_PATH/themes/$name
+user_dir=$HOME/.config/gesso/themes/$name
+
+theme_dir_allowed() {
+  local dir=$1
+  local root=$2
+  local canon_dir canon_root
+  [[ -d $dir ]] || return 0
+  [[ -d $root ]] || return 1
+  canon_dir=$(cd -- "$dir" && pwd -P)
+  canon_root=$(cd -- "$root" && pwd -P)
+  [[ $canon_dir == "$canon_root" || $canon_dir == "$canon_root"/* ]]
+}
+
+if [[ ! -f $builtin_dir/colors.toml && ! -f $user_dir/colors.toml ]]; then
+  printf 'Unknown theme: %s\n' "$name" >&2
+  exit 1
+fi
+if ! theme_dir_allowed "$builtin_dir" "$GESSO_PATH/themes"; then
+  printf 'Unknown theme: %s\n' "$name" >&2
+  exit 1
+fi
+if ! theme_dir_allowed "$user_dir" "$HOME/.config/gesso/themes"; then
   printf 'Unknown theme: %s\n' "$name" >&2
   exit 1
 fi
@@ -32,40 +59,133 @@ fi
 state_dir=$HOME/.local/state/gesso/current
 next=$state_dir/next-theme
 current=$state_dir/theme
-lock=${XDG_RUNTIME_DIR:-/tmp}/gesso-theme-set.lock
+lock_dir=${XDG_RUNTIME_DIR:-$HOME/.local/state/gesso}
+lock=$lock_dir/gesso-theme-set.lock
 
-mkdir -p "$state_dir"
+mkdir -p "$state_dir" "$lock_dir"
 exec 9>"$lock"
 flock 9
 
+toml_quoted() {
+  local file=$1
+  local key=$2
+  grep -E "^${key}[[:space:]]*=" "$file" | head -n1 | cut -d'"' -f2 || true
+}
+
+merge_vscode() {
+  local theme_json=$1
+  local settings_path=$HOME/.config/Code/User/settings.json
+  local backup_path=$HOME/.local/state/gesso/vscode-colorCustomizations.json
+  python3 - "$theme_json" "$settings_path" "$backup_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+theme_path = Path(sys.argv[1])
+settings_path = Path(sys.argv[2])
+backup_path = Path(sys.argv[3])
+
+try:
+    theme = json.loads(theme_path.read_text())
+except json.JSONDecodeError:
+    sys.stderr.write("invalid gesso-theme.json\n")
+    sys.exit(1)
+
+colors = theme.get("colors")
+if not isinstance(colors, dict):
+    sys.stderr.write("gesso-theme.json missing colors\n")
+    sys.exit(1)
+
+if settings_path.exists():
+    try:
+        settings = json.loads(settings_path.read_text())
+    except json.JSONDecodeError:
+        sys.stderr.write("invalid settings.json\n")
+        sys.exit(1)
+    if not isinstance(settings, dict):
+        sys.stderr.write("invalid settings.json\n")
+        sys.exit(1)
+else:
+    settings = {}
+
+prev = settings.get("workbench.colorCustomizations", None)
+backup_path.parent.mkdir(parents=True, exist_ok=True)
+backup_path.write_text(json.dumps(prev) + "\n")
+
+settings["workbench.colorCustomizations"] = colors
+tmp = settings_path.with_name(settings_path.name + ".tmp")
+tmp.write_text(json.dumps(settings, indent=2) + "\n")
+tmp.replace(settings_path)
+PY
+}
+
 rm -rf "$next"
 mkdir -p "$next"
-if [[ -d $GESSO_PATH/themes/$name ]]; then
-  cp -a "$GESSO_PATH/themes/$name/." "$next/"
+if [[ -d $builtin_dir ]]; then
+  cp -a "$builtin_dir/." "$next/"
 fi
-if [[ -d $HOME/.config/gesso/themes/$name ]]; then
-  cp -a "$HOME/.config/gesso/themes/$name/." "$next/"
+if [[ -d $user_dir ]]; then
+  cp -a "$user_dir/." "$next/"
 fi
 if [[ ! -f $next/colors.toml ]]; then
   printf 'colors.toml missing after overlay\n' >&2
+  rm -rf "$next"
+  exit 1
+fi
+
+mode=$(toml_quoted "$next/colors.toml" mode)
+accent=$(toml_quoted "$next/colors.toml" accent)
+background=$(toml_quoted "$next/colors.toml" background)
+foreground=$(toml_quoted "$next/colors.toml" foreground)
+if [[ -z $mode || $mode != "dark" && $mode != "light" || -z $accent || -z $background || -z $foreground ]]; then
+  printf 'colors.toml missing required keys\n' >&2
+  rm -rf "$next"
   exit 1
 fi
 
 export GESSO_NEXT_THEME=$next
-gesso-theme-set-templates
+if ! gesso-theme-set-templates; then
+  rm -rf "$next"
+  exit 1
+fi
 
-rm -rf "$current"
-mv "$next" "$current"
-printf '%s\n' "$name" >"$state_dir/theme.name"
+live_colors=$HOME/.local/share/color-schemes/Gesso.colors
+aside=
+fail_publish() {
+  if [[ -n $aside ]]; then
+    cp "$aside" "$live_colors"
+    rm -f "$aside"
+  else
+    rm -f "$live_colors"
+  fi
+  rm -rf "$next"
+  if (($# > 0)); then
+    printf '%s\n' "$1" >&2
+  fi
+  exit 1
+}
 
 mkdir -p "$HOME/.local/share/color-schemes"
-if [[ -f $current/Gesso.colors ]]; then
-  cp "$current/Gesso.colors" "$HOME/.local/share/color-schemes/Gesso.colors"
+if [[ -f $live_colors ]]; then
+  aside=$(mktemp "$HOME/.local/state/gesso/Gesso.colors.XXXXXX")
+  cp "$live_colors" "$aside"
+fi
+if [[ -f $next/Gesso.colors ]]; then
+  cp "$next/Gesso.colors" "$live_colors"
+fi
+
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
+  if ! command -v plasma-apply-colorscheme >/dev/null; then
+    fail_publish 'plasma-apply-colorscheme is not available'
+  fi
+  if ! plasma-apply-colorscheme Gesso; then
+    fail_publish
+  fi
 fi
 
 mkdir -p "$HOME/.local/share/konsole" "$HOME/.config"
-if [[ -f $current/Gesso.colorscheme ]]; then
-  cp "$current/Gesso.colorscheme" "$HOME/.local/share/konsole/Gesso.colorscheme"
+if [[ -f $next/Gesso.colorscheme ]]; then
+  cp "$next/Gesso.colorscheme" "$HOME/.local/share/konsole/Gesso.colorscheme"
 fi
 printf '%s\n' '[Appearance]' 'ColorScheme=Gesso' '' '[General]' 'Name=Gesso' >"$HOME/.local/share/konsole/Gesso.profile"
 if [[ -f $HOME/.config/konsolerc ]]; then
@@ -78,24 +198,27 @@ else
   printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Gesso.profile' >"$HOME/.config/konsolerc"
 fi
 
-if [[ -f $current/kitty.conf ]]; then
+if [[ -f $next/kitty.conf ]]; then
   if command -v kitty >/dev/null || [[ -d $HOME/.config/kitty ]]; then
     mkdir -p "$HOME/.config/kitty"
-    cp "$current/kitty.conf" "$HOME/.config/kitty/gesso-theme.conf"
+    cp "$next/kitty.conf" "$HOME/.config/kitty/gesso-theme.conf"
   fi
 fi
-if [[ -f $current/vscode.json && -d $HOME/.config/Code/User ]]; then
-  cp "$current/vscode.json" "$HOME/.config/Code/User/gesso-theme.json"
+if [[ -f $next/vscode.json && -d $HOME/.config/Code/User ]]; then
+  cp "$next/vscode.json" "$HOME/.config/Code/User/gesso-theme.json"
+  if ! merge_vscode "$HOME/.config/Code/User/gesso-theme.json"; then
+    fail_publish
+  fi
 fi
 
-mode=$(grep -E '^mode[[:space:]]*=' "$current/colors.toml" | head -n1 | cut -d'"' -f2)
+rm -rf "$current"
+mv "$next" "$current"
+printf '%s\n' "$name" >"$state_dir/theme.name"
+if [[ -n $aside ]]; then
+  rm -f "$aside"
+fi
 
 if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
-  if ! command -v plasma-apply-colorscheme >/dev/null; then
-    printf 'plasma-apply-colorscheme is not available\n' >&2
-    exit 1
-  fi
-  plasma-apply-colorscheme Gesso
   if command -v gsettings >/dev/null; then
     if [[ $mode == "light" ]]; then
       gsettings set org.gnome.desktop.interface color-scheme prefer-light || true
@@ -114,4 +237,3 @@ for hook in "$HOME/.config/gesso/hooks"/theme-set*; do
   [[ -x $hook ]] || continue
   "$hook" "$name"
 done
-

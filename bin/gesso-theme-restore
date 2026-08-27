@@ -9,6 +9,47 @@ if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
   exit 0
 fi
 
+backup=$HOME/.local/state/gesso/vscode-colorCustomizations.json
+settings=$HOME/.config/Code/User/settings.json
+if [[ -f $backup && -d $HOME/.config/Code/User ]]; then
+  python3 - "$settings" "$backup" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+settings_path = Path(sys.argv[1])
+backup_path = Path(sys.argv[2])
+
+try:
+    prev = json.loads(backup_path.read_text())
+except json.JSONDecodeError:
+    sys.stderr.write("invalid vscode-colorCustomizations.json\n")
+    sys.exit(1)
+
+if settings_path.exists():
+    try:
+        settings = json.loads(settings_path.read_text())
+    except json.JSONDecodeError:
+        sys.stderr.write("invalid settings.json\n")
+        sys.exit(1)
+    if not isinstance(settings, dict):
+        sys.stderr.write("invalid settings.json\n")
+        sys.exit(1)
+else:
+    settings = {}
+
+if prev is None:
+    settings.pop("workbench.colorCustomizations", None)
+else:
+    settings["workbench.colorCustomizations"] = prev
+
+settings_path.parent.mkdir(parents=True, exist_ok=True)
+tmp = settings_path.with_name(settings_path.name + ".tmp")
+tmp.write_text(json.dumps(settings, indent=2) + "\n")
+tmp.replace(settings_path)
+PY
+fi
+
 name_file=$HOME/.local/state/gesso/current/theme.name
 if [[ ! -f $name_file ]]; then
   exit 0
