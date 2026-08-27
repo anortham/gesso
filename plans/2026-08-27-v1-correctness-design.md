@@ -2,7 +2,7 @@
 
 Date: 2026-08-27
 
-Status: draft spec. Implementation plan follows after approval.
+Status: approved spec. Implementation plan: `plans/2026-08-27-v1-correctness.md`.
 
 This is the post-phase-5 fix round from the Codex whole-tree review of `fac0009`. It is not a new product phase. It makes the claimed v1 paths work, and it revises claims that this round will not implement.
 
