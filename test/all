@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+status=0
+
+if ! "$ROOT/test/cli"; then
+  printf 'FAIL test/cli\n' >&2
+  status=1
+else
+  printf 'PASS test/cli\n'
+fi
+
+exit $status

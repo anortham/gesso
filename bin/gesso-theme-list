@@ -1,0 +1,41 @@
+#!/bin/bash
+# gesso:summary=List available Gesso themes
+# gesso:args=
+
+set -euo pipefail
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  printf 'Usage: gesso theme list\n'
+  exit 0
+fi
+
+if [[ -z ${GESSO_PATH:-} ]]; then
+  printf 'GESSO_PATH is not set\n' >&2
+  exit 1
+fi
+
+declare -A seen=()
+names=()
+
+collect() {
+  local dir=$1
+  local path name
+  [[ -d $dir ]] || return 0
+  for path in "$dir"/*/colors.toml; do
+    [[ -f $path ]] || continue
+    name=$(basename "$(dirname "$path")")
+    if [[ -z ${seen[$name]+x} ]]; then
+      seen[$name]=1
+      names+=("$name")
+    fi
+  done
+}
+
+collect "$GESSO_PATH/themes"
+collect "$HOME/.config/gesso/themes"
+
+if ((${#names[@]} == 0)); then
+  exit 0
+fi
+
+printf '%s\n' "${names[@]}" | sort
