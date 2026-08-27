@@ -1,0 +1,21 @@
+#!/bin/bash
+# gesso:summary=Print the current Gesso theme name
+# gesso:args=
+
+set -euo pipefail
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  printf 'Usage: gesso theme current\n'
+  exit 0
+fi
+
+name_file=$HOME/.local/state/gesso/current/theme.name
+if [[ -s $name_file ]]; then
+  name=$(cat "$name_file")
+  if [[ -n $name ]]; then
+    printf '%s\n' "$name"
+    exit 0
+  fi
+fi
+
+printf 'unset\n'

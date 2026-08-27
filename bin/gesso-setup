@@ -1,0 +1,68 @@
+#!/bin/bash
+# gesso:summary=Open Gesso Setup
+# gesso:args=
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: gesso setup
+Open Gesso Setup
+EOF
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+self_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+self=$self_dir/$(basename -- "${BASH_SOURCE[0]}")
+
+canon() {
+  local path=$1
+  local dir
+  dir=$(cd -- "$(dirname -- "$path")" && pwd)
+  printf '%s/%s\n' "$dir" "$(basename -- "$path")"
+}
+
+missing() {
+  printf 'Gesso Setup is not built. cmake -S setup -B setup/build && cmake --build setup/build\n' >&2
+  exit 1
+}
+
+bin=""
+if [[ -n ${GESSO_SETUP_BIN:-} ]]; then
+  if [[ -x $GESSO_SETUP_BIN ]]; then
+    bin=$GESSO_SETUP_BIN
+  else
+    missing
+  fi
+elif [[ -n ${GESSO_ROOT:-} && -x $GESSO_ROOT/setup/build/gesso-setup ]]; then
+  bin=$GESSO_ROOT/setup/build/gesso-setup
+elif [[ -n ${GESSO_PATH:-} && -x $GESSO_PATH/setup/build/gesso-setup ]]; then
+  bin=$GESSO_PATH/setup/build/gesso-setup
+else
+  path_dirs=()
+  IFS=':' read -r -a path_dirs <<< "${PATH:-}"
+  dir=""
+  cand=""
+  cand_canon=""
+  for dir in "${path_dirs[@]}"; do
+    [[ -n $dir ]] || continue
+    cand=$dir/gesso-setup
+    if [[ -f $cand && -x $cand ]]; then
+      cand_canon=$(canon "$cand")
+      if [[ $cand_canon != $self ]]; then
+        bin=$cand
+        break
+      fi
+    fi
+  done
+fi
+
+if [[ -n $bin ]]; then
+  exec "$bin" "$@"
+fi
+
+missing
