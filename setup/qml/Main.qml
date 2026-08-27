@@ -46,8 +46,7 @@ Kirigami.ApplicationWindow {
 
   Component {
     id: themePage
-    Kirigami.Page {
-      title: "Theme"
+    ThemePage {
     }
   }
 

@@ -30,3 +30,8 @@ pass "missing setup binary exits non-zero"
 [[ -f $ROOT/setup/CMakeLists.txt ]] || fail "setup CMakeLists exists"
 [[ -f $ROOT/setup/qml/Main.qml ]] || fail "setup Main.qml exists"
 pass "setup skeleton files exist"
+
+[[ -f $ROOT/setup/qml/ThemePage.qml ]] || fail "ThemePage.qml exists"
+grep -q 'theme list' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme list"
+grep -q 'theme set' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme set"
+pass "ThemePage wires list and set"
