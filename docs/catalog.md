@@ -2,7 +2,7 @@
 
 Install, default-app, and agent rows come from data files. The Setup app and the CLI read the same files. Do not hard-code package names in QML or in `case` lists that duplicate the catalog.
 
-Phase 2 ships `data/apps.toml`. Default commands and `gesso pkg add` read it. Agent rows wait for phase 4. Do not invent a second format.
+Phase 2 ships `data/apps.toml`. Default commands and `gesso pkg add` read it. Phase 4 ships `data/agents.toml`. `gesso default agent` and `gesso agent` read it. Do not invent a second format.
 
 ## `data/apps.toml`
 
@@ -33,6 +33,8 @@ v1 browser ids: `firefox`, `chromium`, `chrome`, `brave`, `edge`. Terminal ids: 
 Do not add a row without a tested install path on Fedora 44.
 
 ## `data/agents.toml`
+
+The file lives at `$GESSO_PATH/data/agents.toml`. `gesso default agent` and `gesso agent` look up rows by `id`.
 
 ```toml
 [[agent]]

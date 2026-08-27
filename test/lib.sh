@@ -69,8 +69,22 @@ if [[ ${1:-} == "set" && ${2:-} == "default-web-browser" ]]; then
 fi
 exit 0
 EOF
+  cat >"$stub/mise" <<'EOF'
+#!/bin/bash
+printf '%s\n' "$(basename "$0") $*" >>"$HOME/gesso-stub.log"
+if [[ ${1:-} == "use" ]]; then
+  for arg in "$@"; do
+    if [[ $arg == *grok* ]]; then
+      printf '%s\n' '#!/bin/bash' 'exit 0' >"$HOME/gesso-stubs/grok"
+      chmod +x "$HOME/gesso-stubs/grok"
+    fi
+  done
+fi
+exit 0
+EOF
   chmod +x "$stub/plasma-apply-colorscheme" "$stub/gsettings" "$stub/pkexec" \
-    "$stub/notify-send" "$stub/sudo" "$stub/dnf" "$stub/flatpak" "$stub/xdg-settings"
+    "$stub/notify-send" "$stub/sudo" "$stub/dnf" "$stub/flatpak" "$stub/xdg-settings" \
+    "$stub/mise"
   sys=$HOME/gesso-sys
   mkdir -p "$sys"
   for cmd in python3 awk sed grep head cut sort cat mkdir chmod cp mv rm ln \

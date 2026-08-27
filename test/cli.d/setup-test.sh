@@ -50,10 +50,12 @@ desktop=$(cat "$ROOT/setup/org.gesso.setup.desktop")
 pass "desktop Exec is gesso setup"
 
 [[ -f $ROOT/setup/qml/AgentsPage.qml ]] || fail "AgentsPage.qml exists"
-if grep -Eq 'mise|gesso agent' "$ROOT/setup/qml/AgentsPage.qml"; then
-  fail "Agents page does not install agents"
+grep -q 'agent-get' "$ROOT/setup/qml/AgentsPage.qml" || fail "AgentsPage uses agent-get"
+grep -q 'default' "$ROOT/setup/qml/AgentsPage.qml" || fail "AgentsPage calls default agent"
+if grep -Eq 'npm:@xai-official|not in this build' "$ROOT/setup/qml/AgentsPage.qml"; then
+  fail "AgentsPage has no mise specs or empty-state copy"
 fi
-pass "Agents page is empty state"
+pass "AgentsPage uses agent catalog CLI"
 
 hits=$(grep -REq 'firefox\.desktop|org\.mozilla\.firefox|org\.chromium\.Chromium|com\.google\.Chrome' "$ROOT/setup" && echo yes || echo no)
 [[ $hits == "no" ]] || fail "setup tree has no hardcoded catalog ids"

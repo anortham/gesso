@@ -10,5 +10,7 @@
 | [2026-08-27-phase-2.md](2026-08-27-phase-2.md) | Defaults. Done. |
 | [2026-08-27-phase-3-setup-design.md](2026-08-27-phase-3-setup-design.md) | Setup spec. Approved. |
 | [2026-08-27-phase-3.md](2026-08-27-phase-3.md) | Setup app. Done. |
+| [2026-08-27-phase-4-agents-design.md](2026-08-27-phase-4-agents-design.md) | Agents spec. Approved. |
+| [2026-08-27-phase-4.md](2026-08-27-phase-4.md) | Agents. Done. |
 
-Later: phase 4 agents, phase 5 COPR. Do not write those plans until phase 3's `./test/all` is green.
+Later: phase 5 COPR. Do not write that plan until phase 4's `./test/all` is green.

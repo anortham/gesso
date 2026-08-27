@@ -12,7 +12,7 @@ gesso setup
 
 ## New session
 
-Open this repo and follow `AGENTS.md`. The first code to write is [`plans/2026-08-26-phase-0.md`](plans/2026-08-26-phase-0.md).
+Open this repo and follow `AGENTS.md`.
 
 ## Docs
 
