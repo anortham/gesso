@@ -3,7 +3,7 @@
 **Status:** Complete
 **Plan:** plans/2026-08-27-v1-correctness.md
 **Branch:** v1-correctness
-**PR:** pending — filled in after PR creation
+**PR:** https://github.com/anortham/gesso/pull/7
 **Duration:** this session
 **Phases:** 1/1 complete
 **Tasks:** 6/6 complete
@@ -89,6 +89,6 @@ Codex token counts: not reported by codex-cli.
 ```
 
 ## Next steps
-- Review PR: pending — filled in after PR creation
+- Review PR: https://github.com/anortham/gesso/pull/7
 - Human: merge, then tag `v0.1.0`, then create COPR for Fedora 44. Do not invent `<owner>`.
 - Live KDE check of Setup is still untested here (no Kirigami devel / no cmake in `./test/all`).
