@@ -2,7 +2,7 @@
 
 Date: 2026-08-27
 
-Status: draft spec. Not an implementation plan. Implementation waits on this file's approval, then `plans/2026-08-27-phase-2.md`.
+Status: approved spec. Implementation plan: `plans/2026-08-27-phase-2.md`.
 
 ## Purpose
 

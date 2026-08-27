@@ -2,7 +2,7 @@
 
 A Fedora KDE add-on. One palette, install-then-set-default, and a coding-agent picker. Not a distro. Not Hyprland.
 
-Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. The next code to write is [`plans/2026-08-27-phase-2.md`](plans/2026-08-27-phase-2.md).
+Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. Phase 2 is done. Do not write the phase 3 plan until `./test/all` is green.
 
 ## Start here (new session)
 
