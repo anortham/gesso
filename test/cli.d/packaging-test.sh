@@ -44,3 +44,13 @@ log=$(cat "$HOME/gesso-stub.log")
 [[ $log == *"plasma-apply-colorscheme BreezeDark"* ]] || fail "restore applies BreezeDark" "$log"
 pass "restore applies BreezeDark for dark theme"
 export GESSO_THEME_HEADLESS=1
+
+[[ -f $ROOT/LICENSE ]] || fail "LICENSE exists"
+[[ -f $ROOT/packaging/gesso.spec ]] || fail "gesso.spec exists"
+spec=$(cat "$ROOT/packaging/gesso.spec")
+[[ $spec == *"%package plasma"* ]] || fail "spec has plasma subpackage"
+[[ $spec == *"%package agents"* ]] || fail "spec has agents subpackage"
+[[ $spec == *"Name: gesso"* ]] || fail "spec Name is gesso"
+[[ $spec == *"/etc/"* ]] && fail "spec must not ship /etc"
+[[ $spec == *libexec*gesso/gesso-setup* || $spec == *"%{_libexecdir}/gesso/gesso-setup"* ]] || fail "spec installs libexec gesso-setup"
+pass "spec has three packages and no /etc"
