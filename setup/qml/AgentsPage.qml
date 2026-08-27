@@ -13,6 +13,7 @@ Kirigami.ScrollablePage {
   property string selected: ""
   property string errorText: ""
   property string bannerText: ""
+  property bool busy: false
 
   Component.onCompleted: loadAgents()
 
@@ -89,29 +90,41 @@ Kirigami.ScrollablePage {
   }
 
   function applyDefault() {
+    if (page.busy || gessoCli.busy)
+      return
     errorText = ""
     if (selected.length === 0)
       return
 
-    var result = gessoCli.run(["default", "agent", selected])
-    if (result.exitCode != 0) {
-      errorText = result.stderr
-      return
-    }
-    loadAgents()
+    page.busy = true
+    gessoCli.runAsync(["default", "agent", selected])
   }
 
   function launchAgent() {
+    if (page.busy || gessoCli.busy)
+      return
     errorText = ""
     bannerText = ""
-    var presentResult = gessoCli.runBinary("gesso-cmd-present", ["konsole"])
+    var presentResult = gessoCli.runBinary("gesso-app-present", ["konsole"])
     if (presentResult.exitCode == 0) {
-      var result = gessoCli.runBinary("konsole", ["-e", "gesso", "agent"])
-      if (result.exitCode != 0)
-        errorText = result.stderr
+      if (!gessoCli.startDetached("konsole", ["-e", "gesso", "agent"]))
+        errorText = "Failed to start Konsole."
       return
     }
     bannerText = "Konsole is not installed. Run gesso agent in a terminal."
+  }
+
+  Connections {
+    target: gessoCli
+    enabled: page.busy
+    function onFinished(result) {
+      page.busy = false
+      if (result.exitCode != 0) {
+        page.errorText = result.stderr
+        return
+      }
+      page.loadAgents()
+    }
   }
 
   ColumnLayout {
@@ -151,6 +164,7 @@ Kirigami.ScrollablePage {
 
       Controls.Button {
         text: "Launch"
+        enabled: !page.busy && !gessoCli.busy
         onClicked: page.launchAgent()
       }
 
@@ -160,7 +174,7 @@ Kirigami.ScrollablePage {
 
       Controls.Button {
         text: "Set default"
-        enabled: page.agents.length > 0
+        enabled: page.agents.length > 0 && !page.busy && !gessoCli.busy
         onClicked: page.applyDefault()
       }
     }

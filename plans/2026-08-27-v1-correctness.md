@@ -169,11 +169,11 @@ Commit mode: `serial-worker-commit`. After `./test/cli` is green, commit owned f
 **Approach:** Keep sync `run`/`runBinary` for catalog-get and other short reads, with `waitForFinished(30000)`. Async methods start QProcess on the heap, emit `finished`. QML disables Apply / Set default / Launch while busy and reconnects on `finished`. Short list/load calls may stay sync. Tests grep: `waitForFinished(-1)` absent from `setup/`; Launch Agent calls `startDetached`; default/pkg call sites use `runAsync`. Do not add a C++ test harness. Do not run cmake.
 
 **Acceptance criteria:**
-- [ ] `setup/` contains no `waitForFinished(-1)`
-- [ ] AgentsPage Launch Agent uses `startDetached` and `gesso-app-present konsole`
-- [ ] Defaults and Install apply/install paths use `runAsync`
-- [ ] Setup tests still pass (no hardcoded catalog ids)
-- [ ] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
+- [x] `setup/` contains no `waitForFinished(-1)`
+- [x] AgentsPage Launch Agent uses `startDetached` and `gesso-app-present konsole`
+- [x] Defaults and Install apply/install paths use `runAsync`
+- [x] Setup tests still pass (no hardcoded catalog ids)
+- [x] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
 
 ### Task 4: Theme validate, atomic publish, VS Code merge
 

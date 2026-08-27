@@ -10,6 +10,7 @@ Kirigami.ScrollablePage {
 
   property var apps: []
   property string errorText: ""
+  property bool busy: false
 
   Component.onCompleted: loadApps()
 
@@ -87,13 +88,24 @@ Kirigami.ScrollablePage {
   }
 
   function installApp(id) {
-    errorText = ""
-    var result = gessoCli.run(["pkg", "add", id])
-    if (result.exitCode != 0) {
-      errorText = result.stderr
+    if (page.busy || gessoCli.busy)
       return
+    errorText = ""
+    page.busy = true
+    gessoCli.runAsync(["pkg", "add", id])
+  }
+
+  Connections {
+    target: gessoCli
+    enabled: page.busy
+    function onFinished(result) {
+      page.busy = false
+      if (result.exitCode != 0) {
+        page.errorText = result.stderr
+        return
+      }
+      page.loadApps()
     }
-    loadApps()
   }
 
   ColumnLayout {
@@ -119,7 +131,7 @@ Kirigami.ScrollablePage {
 
         Controls.Button {
           text: "Install"
-          enabled: !modelData.present
+          enabled: !modelData.present && !page.busy && !gessoCli.busy
           onClicked: page.installApp(modelData.id)
         }
       }
