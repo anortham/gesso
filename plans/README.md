@@ -12,5 +12,7 @@
 | [2026-08-27-phase-3.md](2026-08-27-phase-3.md) | Setup app. Done. |
 | [2026-08-27-phase-4-agents-design.md](2026-08-27-phase-4-agents-design.md) | Agents spec. Approved. |
 | [2026-08-27-phase-4.md](2026-08-27-phase-4.md) | Agents. Done. |
+| [2026-08-27-phase-5-packaging-design.md](2026-08-27-phase-5-packaging-design.md) | Packaging spec. Approved. |
+| [2026-08-27-phase-5.md](2026-08-27-phase-5.md) | Packaging. Done. |
 
-Later: phase 5 COPR. Do not write that plan until phase 4's `./test/all` is green.
+v1 is complete aside from COPR publish.

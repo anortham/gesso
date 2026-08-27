@@ -49,4 +49,5 @@ target_link_libraries(gesso-setup PRIVATE
   KF6::Kirigami
 )
 
-install(TARGETS gesso-setup ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS gesso-setup DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/gesso)
+install(FILES org.gesso.setup.desktop DESTINATION ${KDE_INSTALL_APPDIR})

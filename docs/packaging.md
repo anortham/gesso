@@ -2,34 +2,42 @@
 
 v1 ships as COPR RPMs for Fedora 44. Not a remix, not a bootc image.
 
+The spec is [`packaging/gesso.spec`](../packaging/gesso.spec). Human COPR steps are in [`packaging/README.md`](../packaging/README.md).
+
 ## RPMs
 
 | Package | Contents | Requires |
 |---|---|---|
-| `gesso` | `bin/gesso*`, `themes/`, `default/`, `data/` | bash, plasma-workspace (for `plasma-apply-colorscheme` at theme-set time; the CLI still runs without a session) |
-| `gesso-plasma` | Setup app, desktop file | `gesso`, Kirigami/Qt6 |
-| `gesso-agents` | agent catalog extras if any launch helpers are not in `gesso` | `gesso`, `mise` |
+| `gesso` | `bin/gesso*`, `themes/`, `default/`, `data/` | bash, python3. Recommends plasma-workspace |
+| `gesso-plasma` | `/usr/libexec/gesso/gesso-setup`, desktop file | `gesso`, Kirigami/Qt6 |
+| `gesso-agents` | no files (metapackage) | `gesso`, `mise` |
 
-`dnf install gesso-plasma` is the user-facing install. It pulls `gesso`.
+`dnf install gesso-plasma` is the user-facing install. It pulls `gesso`. `gesso-agents` exists so `dnf install gesso-agents` pulls `mise`. Agent scripts already live in `gesso`.
 
 ## Install paths
 
-See [`layout.md`](layout.md). Data goes to `/usr/share/gesso`. Binaries to `/usr/bin`. User state stays in `$HOME`.
+See [`layout.md`](layout.md). Data goes to `/usr/share/gesso`. Binaries go to `/usr/bin`. The Kirigami binary goes to `/usr/libexec/gesso/gesso-setup`. The bash launcher stays `/usr/bin/gesso-setup` and execs that path. User state stays in `$HOME`.
 
-Provide `/usr/lib/environment.d/gesso.conf` with `GESSO_PATH=/usr/share/gesso` only if a session needs it; prefer the router defaulting to `/usr/share/gesso` when the env var is unset and the checkout probe fails.
+Do not ship `/etc` or `environment.d`. The router sets `$GESSO_PATH=/usr/share/gesso` when the env var is unset and the checkout probe fails.
 
 ## Uninstall
 
+If Gesso is the active color scheme, run `gesso theme restore` before `dnf remove gesso-plasma gesso`. Restore applies `BreezeDark` or `Breeze` from the last theme `mode`, or `BreezeDark` if unknown. RPM scriptlets do not call restore.
+
 `dnf remove gesso-plasma gesso` must leave Plasma usable.
 
-- If the active color scheme is `Gesso`, apply `BreezeDark` or `Breeze` according to the last `mode`, or BreezeDark if unknown.
 - Do not delete `~/.config/gesso` or `~/.local/state/gesso` unless the user passes a documented purge command.
 - Do not leave a broken default browser; XDG defaults pointing at a removed app are the user's problem only if they removed that app, not Gesso.
 
 ## Aurora / Kinoite
 
-Same files. Do not write `/usr` except the RPM payload. Theme apply writes `~/.local/share`. App install on Atomic hosts is phase 5+ (Flatpak and `mise` only). v1 tests run on mutable Fedora KDE.
+Same files. Do not write `/usr` except the RPM payload. Theme apply writes `~/.local/share`. Aurora is untested in v1. App install on Atomic hosts is Flatpak and `mise` only. v1 tests run on mutable Fedora KDE.
 
 ## COPR
 
-Phase 5. Until then, `./bin/gesso` from a git checkout is the development install. Do not add a spec file before the CLI works.
+```bash
+dnf copr enable <owner>/gesso
+dnf install gesso-plasma
+```
+
+`<owner>` is a placeholder until someone creates the project. Do not invent an owner. Creating and building the COPR is a human step. See [`packaging/README.md`](../packaging/README.md).

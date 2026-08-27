@@ -2,7 +2,7 @@
 
 `bin/gesso` maps spaced commands onto `bin/gesso-*`. There is no registry file. Every executable `bin/gesso-*` is a command. Its filename is the default route.
 
-`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`. `gesso theme current` becomes `exec bin/gesso-theme-current`. `gesso default browser firefox` becomes `exec bin/gesso-default-browser firefox`. `gesso default agent grok` becomes `exec bin/gesso-default-agent grok`. `gesso pkg add firefox` becomes `exec bin/gesso-pkg-add firefox`. `gesso agent` becomes `exec bin/gesso-agent`. `gesso setup` becomes `exec bin/gesso-setup`.
+`gesso theme list` becomes `exec bin/gesso-theme-list`. `gesso theme set tokyo-night` becomes `exec bin/gesso-theme-set tokyo-night`. `gesso theme current` becomes `exec bin/gesso-theme-current`. `gesso theme restore` becomes `exec bin/gesso-theme-restore`. `gesso default browser firefox` becomes `exec bin/gesso-default-browser firefox`. `gesso default agent grok` becomes `exec bin/gesso-default-agent grok`. `gesso pkg add firefox` becomes `exec bin/gesso-pkg-add firefox`. `gesso agent` becomes `exec bin/gesso-agent`. `gesso setup` becomes `exec bin/gesso-setup`.
 
 ## Resolution
 
@@ -42,15 +42,17 @@ Unknown keys are ignored. A missing summary fails `./test/cli` metadata lint.
 
 | Group | Purpose |
 |---|---|
-| `theme` | List, set, install themes |
+| `theme` | List, set, restore themes |
 | `default` | Browser, terminal, editor, agent |
 | `pkg` | dnf / Flatpak helpers |
 | `agent` | Launch and select coding agents |
 | `setup` | Open the Kirigami Setup app |
 
-Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`. Phase 3 adds `gesso setup` and `gesso theme current`. Phase 4 adds `gesso default agent` and `gesso agent`.
+Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`. Phase 3 adds `gesso setup` and `gesso theme current`. Phase 4 adds `gesso default agent` and `gesso agent`. Phase 5 adds `gesso theme restore`.
 
 `gesso theme current` prints the name in `~/.local/state/gesso/current/theme.name`, or `unset` when that file is missing or empty.
+
+`gesso theme restore` applies `BreezeDark` or `Breeze` when Gesso last set a theme. `light` mode selects `Breeze`. Otherwise `BreezeDark`. Missing `theme.name` exits 0. Headless tests skip Plasma and still exit 0. It does not delete `~/.config/gesso` or `~/.local/state/gesso`. Run it before `dnf remove` if Gesso is the active scheme.
 
 `gesso default browser firefox` installs Firefox when it is missing, then sets the XDG default browser to `firefox.desktop`. `gesso default terminal [id]` and `gesso default editor [id]` use the same catalog loop for `xdg-terminals.list` and `~/.local/state/gesso/defaults/editor`. No id prints the current catalog id, or `unset`.
 
@@ -64,7 +66,7 @@ Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. 
 
 ## `$GESSO_PATH`
 
-Commands read data from `$GESSO_PATH`. Packaged install sets it to `/usr/share/gesso` (environment.d or the wrapper). Tests export it to the repo root. The router, when `$GESSO_PATH` is unset and it can see `themes/` next to `bin/`, sets it to the checkout root so `./bin/gesso theme list` works in development.
+Commands read data from `$GESSO_PATH`. Packaged install uses `/usr/share/gesso`. There is no `environment.d` file. Tests export it to the repo root. The router, when `$GESSO_PATH` is unset and it can see `themes/` next to `bin/`, sets it to the checkout root so `./bin/gesso theme list` works in development. When that probe fails, the router sets `$GESSO_PATH=/usr/share/gesso`.
 
 Do not fall back to `$HOME`.
 
@@ -76,6 +78,7 @@ gesso commands
 gesso theme --help
 gesso theme list --help
 gesso theme current
+gesso theme restore
 gesso default browser --help
 gesso default browser firefox
 gesso default agent --help
