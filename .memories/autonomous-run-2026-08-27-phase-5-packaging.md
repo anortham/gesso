@@ -3,7 +3,7 @@
 **Status:** Complete
 **Plan:** plans/2026-08-27-phase-5.md
 **Branch:** phase-5-packaging
-**PR:** pending — filled in after PR creation
+**PR:** https://github.com/anortham/gesso/pull/6
 **Duration:** about 20 minutes
 **Phases:** 1/1 complete
 **Tasks:** 4/4 complete
@@ -34,5 +34,5 @@ External review: none (not requested for this run).
 - None for the PR. COPR publish is out of scope.
 
 ## Next steps
-- Review PR: pending — filled in after PR creation
+- Review PR: https://github.com/anortham/gesso/pull/6
 - Human: create COPR `gesso` for Fedora 44, then `dnf copr enable <owner>/gesso`.
