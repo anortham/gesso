@@ -93,3 +93,24 @@ gesso default browser firefox
 log=$(cat "$HOME/gesso-stub.log")
 [[ $log == *"dnf install"* ]] && fail "second apply skips dnf" "$log"
 pass "default browser firefox is idempotent"
+
+gesso default terminal konsole
+list=$HOME/.config/xdg-terminals.list
+[[ -f $list ]] || fail "xdg-terminals.list exists"
+first=$(head -n1 "$list")
+[[ $first == "org.kde.konsole.desktop" ]] || fail "konsole is first in xdg-terminals.list" "$first"
+cur=$(gesso default terminal)
+[[ $cur == "konsole" ]] || fail "default terminal prints konsole" "$cur"
+pass "default terminal konsole writes xdg-terminals.list"
+
+gesso default editor kate
+ed=$HOME/.local/state/gesso/defaults/editor
+[[ -f $ed ]] || fail "editor state file exists"
+got=$(cat "$ed")
+[[ $got == "kate" ]] || fail "editor state is kate" "$got"
+cur=$(gesso default editor)
+[[ $cur == "kate" ]] || fail "default editor prints kate" "$cur"
+pass "default editor kate writes state file"
+
+gesso default editor kate
+pass "default editor kate is idempotent"

@@ -1,0 +1,81 @@
+#!/bin/bash
+# gesso:summary=Set or print the default terminal
+# gesso:args=[id]
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso default terminal [id]\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+list=$HOME/.config/xdg-terminals.list
+
+if (($# == 0)); then
+  if [[ -f $list ]]; then
+    first=$(head -n1 "$list")
+    if [[ -n $first ]]; then
+      ids=$(gesso-catalog-get --kind terminal)
+      while IFS= read -r id; do
+        [[ -n $id ]] || continue
+        desktop=$(gesso-catalog-get "$id" desktop_id)
+        if [[ $desktop == "$first" ]]; then
+          printf '%s\n' "$id"
+          exit 0
+        fi
+      done <<< "$ids"
+    fi
+  fi
+  printf 'unset\n'
+  exit 0
+fi
+
+id=$1
+kind=""
+if kind=$(gesso-catalog-get "$id" kind 2>/dev/null); then
+  :
+else
+  printf 'Unknown terminal: %s\n' "$id" >&2
+  exit 1
+fi
+
+if [[ $kind != "terminal" ]]; then
+  printf 'Unknown terminal: %s\n' "$id" >&2
+  exit 1
+fi
+
+app_cmd=$(gesso-catalog-get "$id" command)
+desktop_id=$(gesso-catalog-get "$id" desktop_id)
+label=$(gesso-catalog-get "$id" label)
+
+if ! gesso-cmd-present "$app_cmd"; then
+  gesso pkg add "$id"
+fi
+
+mkdir -p "$(dirname "$list")"
+lines=("$desktop_id")
+if [[ -f $list ]]; then
+  while IFS= read -r line || [[ -n $line ]]; do
+    [[ -n $line ]] || continue
+    skip=0
+    for existing in "${lines[@]}"; do
+      if [[ $existing == "$line" ]]; then
+        skip=1
+        break
+      fi
+    done
+    if ((skip == 1)); then
+      continue
+    fi
+    lines+=("$line")
+  done < "$list"
+fi
+printf '%s\n' "${lines[@]}" > "$list"
+
+if command -v notify-send >/dev/null; then
+  notify-send "$label is now the default terminal"
+fi

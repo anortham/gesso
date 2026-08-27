@@ -22,6 +22,8 @@ Commands:
   theme list       List available themes
   theme set        Apply a Gesso theme
   default browser  Set or print the default browser
+  default terminal Set or print the default terminal
+  default editor   Set or print the default editor
   pkg add          Install a catalog app
   commands         List commands
 

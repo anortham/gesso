@@ -1,0 +1,56 @@
+#!/bin/bash
+# gesso:summary=Set or print the default editor
+# gesso:args=[id]
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso default editor [id]\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+editor_file=$HOME/.local/state/gesso/defaults/editor
+
+if (($# == 0)); then
+  if [[ -f $editor_file ]]; then
+    current=$(cat "$editor_file")
+    if [[ -n $current ]]; then
+      printf '%s\n' "$current"
+      exit 0
+    fi
+  fi
+  printf 'unset\n'
+  exit 0
+fi
+
+id=$1
+kind=""
+if kind=$(gesso-catalog-get "$id" kind 2>/dev/null); then
+  :
+else
+  printf 'Unknown editor: %s\n' "$id" >&2
+  exit 1
+fi
+
+if [[ $kind != "editor" ]]; then
+  printf 'Unknown editor: %s\n' "$id" >&2
+  exit 1
+fi
+
+app_cmd=$(gesso-catalog-get "$id" command)
+label=$(gesso-catalog-get "$id" label)
+
+if ! gesso-cmd-present "$app_cmd"; then
+  gesso pkg add "$id"
+fi
+
+mkdir -p "$(dirname "$editor_file")"
+printf '%s\n' "$id" > "$editor_file"
+
+if command -v notify-send >/dev/null; then
+  notify-send "$label is now the default editor"
+fi
