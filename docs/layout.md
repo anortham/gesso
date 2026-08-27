@@ -18,10 +18,11 @@ gesso/
   test/all                  aggregate runner
   docs/                     how the system is shaped
   plans/                    product brief and implementation plans
-  packaging/                RPM spec later (phase 5)
+  packaging/gesso.spec      RPM spec (phase 5)
+  packaging/README.md       Human COPR steps
 ```
 
-Phase 0 creates `bin/`, `themes/tokyo-night/colors.toml`, and `test/`. Phase 3 adds `setup/` and `setup/org.gesso.setup.desktop`. Later phases add the rest. Do not create empty directories ahead of the plan that owns them.
+Phase 0 creates `bin/`, `themes/tokyo-night/colors.toml`, and `test/`. Phase 3 adds `setup/` and `setup/org.gesso.setup.desktop`. Phase 5 adds `packaging/gesso.spec`. Do not create empty directories ahead of the plan that owns them.
 
 ## Installed (Fedora)
 
@@ -32,13 +33,15 @@ The `gesso` RPM:
 | `bin/gesso`, `bin/gesso-*` | `/usr/bin/` |
 | `themes/`, `default/`, `data/` | `/usr/share/gesso/` |
 
-The `gesso-plasma` RPM (phase 3+):
+The `gesso-plasma` RPM:
 
 | Source | Installed at |
 |---|---|
-| Setup binary | `/usr/bin/gesso-setup` |
+| Setup binary | `/usr/libexec/gesso/gesso-setup` |
 | `setup/org.gesso.setup.desktop` | `/usr/share/applications/` |
 | Look-and-Feel, if any | `~/.local/share/plasma/look-and-feel/` at apply time, not `/usr`, so uninstall and Aurora both work |
+
+The bash launcher stays `/usr/bin/gesso-setup` in the `gesso` package. It execs `/usr/libexec/gesso/gesso-setup`. It does not search `PATH` for another `gesso-setup`.
 
 `$GESSO_PATH` is `/usr/share/gesso` on an installed system. A git checkout of `bin/gesso` may default it to the repo root when the env var is unset.
 

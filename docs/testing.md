@@ -6,7 +6,7 @@ Non-graphical tests must run on a machine with no Plasma session. That includes 
 
 | Command | Owns |
 |---|---|
-| `./test/cli` | Router, metadata lint, theme list/set, default/pkg, setup, and agent against a fake `$HOME` |
+| `./test/cli` | Router, metadata lint, theme list/set/restore, default/pkg, setup, agent, and packaging against a fake `$HOME` |
 | `./test/all` | Runs `./test/cli`, later other suites, continues after a failure, non-zero if any failed |
 
 There is no graphical acceptance suite in v1. Do not open a nested Plasma to prove theme set. File generation plus a stub `plasma-apply-colorscheme` on `PATH` is the proof. Setup tests do not open a window and do not run cmake.
@@ -22,7 +22,7 @@ Each suite sources `test/lib.sh` and calls `gesso_test_init`, which:
 - Puts a stub directory and `$ROOT/bin` first on `PATH`
 - Uses `pass "description"` / `fail "description"` (first fail exits the suite)
 
-Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write a user theme overlay without affecting `test/cli.d/theme-test.sh`. Default and pkg tests live in `test/cli.d/default-test.sh`. Setup tests live in `test/cli.d/setup-test.sh`. They cover `gesso theme current`, `gesso setup --help`, a missing binary, and a grep that QML has no hardcoded catalog ids and no mise package strings. The suite does not open a window. The suite does not run cmake. Agent tests live in `test/cli.d/agent-test.sh`. They cover `gesso default agent`, `gesso agent` dry-run, and the Work cwd rule.
+Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write a user theme overlay without affecting `test/cli.d/theme-test.sh`. Default and pkg tests live in `test/cli.d/default-test.sh`. Setup tests live in `test/cli.d/setup-test.sh`. They cover `gesso theme current`, `gesso setup --help`, a missing binary, and a grep that QML has no hardcoded catalog ids and no mise package strings. The suite does not open a window. The suite does not run cmake. Agent tests live in `test/cli.d/agent-test.sh`. They cover `gesso default agent`, `gesso agent` dry-run, and the Work cwd rule. Packaging tests live in `test/cli.d/packaging-test.sh`. They cover `packaging/gesso.spec` (three packages, libexec, no `/etc`), `gesso theme restore`, and the libexec launcher. The suite does not run `rpmbuild`, `mock`, or `copr-cli`.
 
 ## Stubs
 
@@ -36,4 +36,4 @@ Never call real `dnf`, `flatpak`, `pkexec`, `sudo`, `xdg-settings`, `plasma-appl
 
 ## What not to test in v1
 
-Live Plasma color apply, Discover, COPR, NVIDIA, Aurora rebase. Those are manual checks on a Fedora KDE 44 box after phase 1.
+Live Plasma color apply, Discover, COPR, NVIDIA, Aurora rebase, `rpmbuild`. Those are manual checks on a Fedora KDE 44 box.

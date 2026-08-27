@@ -5,10 +5,12 @@ A Fedora KDE add-on. One palette, install-then-set-default, and a coding-agent p
 Not a distro. Not Hyprland. Not a fork of Omarchy or Aurora.
 
 ```bash
-dnf copr enable <you>/gesso   # later
+dnf copr enable <owner>/gesso
 dnf install gesso-plasma
 gesso setup
 ```
+
+`<owner>` is a placeholder until the COPR exists. Do not invent a COPR user. If Gesso is the active scheme, run `gesso theme restore` before `dnf remove`.
 
 ## New session
 
