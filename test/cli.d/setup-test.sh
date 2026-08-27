@@ -35,3 +35,11 @@ pass "setup skeleton files exist"
 grep -q 'theme list' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme list"
 grep -q 'theme set' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme set"
 pass "ThemePage wires list and set"
+
+[[ -f $ROOT/setup/qml/DefaultsPage.qml ]] || fail "DefaultsPage.qml exists"
+grep -q 'catalog-get' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage uses catalog-get"
+grep -q 'default' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage calls default"
+if grep -Eq 'firefox\.desktop|org\.mozilla\.firefox' "$ROOT/setup/qml/DefaultsPage.qml"; then
+  fail "DefaultsPage has no hardcoded firefox ids"
+fi
+pass "DefaultsPage uses catalog CLI"

@@ -52,8 +52,7 @@ Kirigami.ApplicationWindow {
 
   Component {
     id: defaultsPage
-    Kirigami.Page {
-      title: "Defaults"
+    DefaultsPage {
     }
   }
 
