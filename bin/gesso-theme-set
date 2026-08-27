@@ -29,5 +29,28 @@ if [[ ! -f $GESSO_PATH/themes/$name/colors.toml && ! -f $HOME/.config/gesso/them
   exit 1
 fi
 
-printf 'theme set is not implemented\n' >&2
-exit 1
+state_dir=$HOME/.local/state/gesso/current
+next=$state_dir/next-theme
+current=$state_dir/theme
+lock=${XDG_RUNTIME_DIR:-/tmp}/gesso-theme-set.lock
+
+mkdir -p "$state_dir"
+exec 9>"$lock"
+flock 9
+
+rm -rf "$next"
+mkdir -p "$next"
+if [[ -d $GESSO_PATH/themes/$name ]]; then
+  cp -a "$GESSO_PATH/themes/$name/." "$next/"
+fi
+if [[ -d $HOME/.config/gesso/themes/$name ]]; then
+  cp -a "$HOME/.config/gesso/themes/$name/." "$next/"
+fi
+if [[ ! -f $next/colors.toml ]]; then
+  printf 'colors.toml missing after overlay\n' >&2
+  exit 1
+fi
+
+rm -rf "$current"
+mv "$next" "$current"
+printf '%s\n' "$name" >"$state_dir/theme.name"
