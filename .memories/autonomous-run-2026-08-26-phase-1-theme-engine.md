@@ -3,7 +3,7 @@
 **Status:** Complete
 **Plan:** plans/2026-08-26-phase-1.md
 **Branch:** phase-1-theme-engine
-**PR:** pending — filled in after PR creation
+**PR:** https://github.com/anortham/gesso/pull/2
 **Duration:** about 40 minutes
 **Phases:** 1/1 complete
 **Tasks:** 6/6 complete
@@ -67,5 +67,5 @@ External review: none (not requested for this run).
 ```
 
 ## Next steps
-- Review PR: pending — filled in after PR creation
+- Review PR: https://github.com/anortham/gesso/pull/2
 - Do not start phase 2 until this is green on `main`.
