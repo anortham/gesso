@@ -253,7 +253,7 @@ Commit mode: `serial-worker-commit`. After `./test/cli` is green, commit owned f
 **Approach:** README create-COPR list becomes: merge this branch; tag `v0.1.0` on that commit; create COPR for Fedora 44; build; inspect three RPMs; replace `<owner>`. Tests: spec contains `v%{version}` in Source0; still no `/etc`; still three packages. Do not run rpmbuild.
 
 **Acceptance criteria:**
-- [ ] `packaging/README.md` lists tag `v0.1.0` before COPR create
-- [ ] packaging tests assert Source0 uses `v%{version}`
-- [ ] No tag is created in this branch
-- [ ] Worker-scope verification passes and the change is committed (`serial-worker-commit`)
+- [x] `packaging/README.md` lists tag `v0.1.0` before COPR create
+- [x] packaging tests assert Source0 uses `v%{version}`
+- [x] No tag is created in this branch
+- [x] Worker-scope verification passes and the change is committed (`serial-worker-commit`)

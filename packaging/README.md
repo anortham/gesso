@@ -18,10 +18,13 @@ There is no `/etc` payload. There is no `environment.d` file. The router sets `$
 
 ## Create the COPR (human)
 
-1. Create a COPR project named `gesso` for Fedora 44.
-2. Point that project at this repository and `packaging/gesso.spec`.
-3. Build the packages for Fedora 44.
-4. Confirm the three RPMs exist: `gesso`, `gesso-plasma`, `gesso-agents`.
+Do these steps in order after the branch lands. Do not tag from this branch.
+
+1. Merge this branch.
+2. Tag `v0.1.0` on that commit.
+3. Create a COPR project named `gesso` for Fedora 44. Point it at this repository and `packaging/gesso.spec`.
+4. Build the packages for Fedora 44 and confirm the three RPMs exist: `gesso`, `gesso-plasma`, `gesso-agents`.
+5. Replace `<owner>` in README and docs.
 
 ## Enable and install
 

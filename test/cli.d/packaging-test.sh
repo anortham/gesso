@@ -52,6 +52,7 @@ spec=$(cat "$ROOT/packaging/gesso.spec")
 [[ $spec == *"%package plasma"*Recommends:\ gesso-agents*"%description plasma"* ]] || fail "plasma Recommends gesso-agents"
 [[ $spec == *"%package agents"* ]] || fail "spec has agents subpackage"
 [[ $spec == *"Name: gesso"* ]] || fail "spec Name is gesso"
+[[ $spec == *"Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz"* ]] || fail "spec Source0 uses v%{version}"
 [[ $spec == *"/etc/"* ]] && fail "spec must not ship /etc"
 [[ $spec == *libexec*gesso/gesso-setup* || $spec == *"%{_libexecdir}/gesso/gesso-setup"* ]] || fail "spec installs libexec gesso-setup"
-pass "spec has three packages and no /etc"
+pass "spec has three packages, Source0 tag, and no /etc"

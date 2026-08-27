@@ -35,9 +35,11 @@ Same files. Do not write `/usr` except the RPM payload. Theme apply writes `~/.l
 
 ## COPR
 
+Tag `v0.1.0` is a human step after merge. Do not create the tag from this branch. Then create the COPR for Fedora 44, build, and inspect the three RPMs. See [`packaging/README.md`](../packaging/README.md).
+
 ```bash
 dnf copr enable <owner>/gesso
 dnf install gesso-plasma
 ```
 
-`<owner>` is a placeholder until someone creates the project. Do not invent an owner. Creating and building the COPR is a human step. See [`packaging/README.md`](../packaging/README.md).
+`<owner>` is a placeholder until someone creates the project. Do not invent an owner.
