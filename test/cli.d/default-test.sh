@@ -26,3 +26,35 @@ if gesso-catalog-get not-an-app command >/tmp/gesso-cat-unknown 2>&1; then
   fail "unknown catalog id exits non-zero"
 fi
 pass "unknown catalog id exits non-zero"
+
+if gesso pkg add >/tmp/gesso-pkg-noargs 2>&1; then
+  fail "pkg add without args exits non-zero"
+fi
+pass "pkg add without args exits non-zero"
+
+if gesso pkg add not-an-app >/tmp/gesso-pkg-unknown 2>&1; then
+  fail "pkg add unknown id exits non-zero"
+fi
+unknown=$(cat /tmp/gesso-pkg-unknown)
+[[ $unknown == *"Unknown app: not-an-app"* ]] || fail "pkg add unknown message" "$unknown"
+pass "pkg add unknown id exits non-zero"
+
+rm -f "$HOME/gesso-stub.log"
+gesso pkg add firefox
+[[ -x $HOME/gesso-stubs/firefox ]] || fail "dnf stub created firefox command"
+log=$(cat "$HOME/gesso-stub.log")
+[[ $log == *"dnf install -y firefox"* ]] || fail "dnf install firefox logged" "$log"
+pass "pkg add firefox installs via dnf"
+
+rm -f "$HOME/gesso-stub.log"
+gesso pkg add firefox
+log=$(cat "$HOME/gesso-stub.log" 2>/dev/null || true)
+[[ $log == *"dnf install"* ]] && fail "second pkg add firefox skips dnf" "$log"
+pass "pkg add firefox is idempotent when present"
+
+rm -f "$HOME/gesso-stub.log"
+gesso pkg add chrome
+log=$(cat "$HOME/gesso-stub.log")
+[[ $log == *"dnf install"* ]] && fail "chrome has no dnf packages" "$log"
+[[ $log == *"flatpak install -y flathub com.google.Chrome"* ]] || fail "chrome uses flatpak" "$log"
+pass "pkg add chrome uses flatpak"

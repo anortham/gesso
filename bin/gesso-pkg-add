@@ -1,0 +1,58 @@
+#!/bin/bash
+# gesso:summary=Install a catalog app with dnf, then Flatpak
+# gesso:args=<id>
+# gesso:requires-sudo=true
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso pkg add <id>\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+if (($# == 0)); then
+  usage >&2
+  exit 1
+fi
+
+id=$1
+app_cmd=$(gesso-catalog-get "$id" command)
+packages=$(gesso-catalog-get "$id" dnf)
+app_flatpak=$(gesso-catalog-get "$id" flatpak)
+
+if gesso-cmd-present "$app_cmd"; then
+  exit 0
+fi
+
+elevate() {
+  if ((EUID == 0)); then
+    "$@"
+  elif [[ -t 0 ]]; then
+    sudo "$@"
+  else
+    pkexec "$@"
+  fi
+}
+
+if [[ -n $packages ]]; then
+  if elevate dnf install -y $packages; then
+    if gesso-cmd-present "$app_cmd"; then
+      exit 0
+    fi
+  fi
+fi
+
+if [[ -n $app_flatpak ]]; then
+  if elevate flatpak install -y flathub "$app_flatpak"; then
+    if gesso-cmd-present "$app_cmd"; then
+      exit 0
+    fi
+  fi
+fi
+
+printf 'failed to install %s\n' "$id" >&2
+exit 1
