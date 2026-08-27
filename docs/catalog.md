@@ -2,11 +2,11 @@
 
 Install, default-app, and agent rows come from data files. The Setup app and the CLI read the same files. Do not hard-code package names in QML or in `case` lists that duplicate the catalog.
 
-Phase 0 has no catalog. These shapes are locked so phase 2 and 4 do not invent a second format.
+Phase 2 ships `data/apps.toml`. Default commands and `gesso pkg add` read it. Agent rows wait for phase 4. Do not invent a second format.
 
 ## `data/apps.toml`
 
-One table per app. `id` is the Gesso name used on the CLI (`gesso default browser firefox`).
+One table per app. `id` is the Gesso name used on the CLI (`gesso default browser firefox`). The file lives at `$GESSO_PATH/data/apps.toml`. `gesso default browser|terminal|editor` and `gesso pkg add` look up rows by that `id`.
 
 ```toml
 [[app]]

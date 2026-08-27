@@ -1,0 +1,66 @@
+#!/bin/bash
+# gesso:summary=Read a field from the app catalog
+# gesso:hidden=true
+# gesso:args=<id> <field>|--kind <kind>
+
+set -euo pipefail
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  printf 'Usage: gesso-catalog-get <id> <field>\n'
+  printf '       gesso-catalog-get --kind <kind>\n'
+  exit 0
+fi
+
+if [[ -z ${GESSO_PATH:-} ]]; then
+  printf 'GESSO_PATH is not set\n' >&2
+  exit 1
+fi
+
+catalog=$GESSO_PATH/data/apps.toml
+if [[ ! -f $catalog ]]; then
+  printf 'catalog not found: %s\n' "$catalog" >&2
+  exit 1
+fi
+
+python3 - "$catalog" "$@" <<'PY'
+import sys
+import tomllib
+from pathlib import Path
+
+catalog = Path(sys.argv[1])
+args = sys.argv[2:]
+data = tomllib.loads(catalog.read_text())
+apps = data.get("app") or []
+
+if len(args) == 2 and args[0] == "--kind":
+    kind = args[1]
+    ids = [a["id"] for a in apps if a.get("kind") == kind]
+    if not ids:
+        sys.exit(1)
+    print("\n".join(ids))
+    sys.exit(0)
+
+if len(args) != 2:
+    sys.stderr.write("Usage: gesso-catalog-get <id> <field>\n")
+    sys.exit(1)
+
+app_id, field = args
+row = next((a for a in apps if a.get("id") == app_id), None)
+if row is None:
+    sys.stderr.write(f"Unknown app: {app_id}\n")
+    sys.exit(1)
+if field not in row:
+    if field == "dnf":
+        print("")
+        sys.exit(0)
+    if field == "flatpak":
+        print("")
+        sys.exit(0)
+    sys.stderr.write(f"Unknown field: {field}\n")
+    sys.exit(1)
+value = row[field]
+if isinstance(value, list):
+    print(" ".join(str(v) for v in value))
+else:
+    print(value)
+PY

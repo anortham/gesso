@@ -1,0 +1,133 @@
+[[app]]
+id = "firefox"
+kind = "browser"
+label = "Firefox"
+glyph = "󰈹"
+desktop_id = "firefox.desktop"
+command = "firefox"
+dnf = ["firefox"]
+flatpak = "org.mozilla.firefox"
+
+[[app]]
+id = "chromium"
+kind = "browser"
+label = "Chromium"
+glyph = "*"
+desktop_id = "chromium-browser.desktop"
+command = "chromium-browser"
+dnf = ["chromium"]
+flatpak = "org.chromium.Chromium"
+
+[[app]]
+id = "chrome"
+kind = "browser"
+label = "Chrome"
+glyph = "*"
+desktop_id = "google-chrome.desktop"
+command = "google-chrome"
+dnf = []
+flatpak = "com.google.Chrome"
+
+[[app]]
+id = "brave"
+kind = "browser"
+label = "Brave"
+glyph = "*"
+desktop_id = "brave-browser.desktop"
+command = "brave"
+dnf = []
+flatpak = "com.brave.Browser"
+
+[[app]]
+id = "edge"
+kind = "browser"
+label = "Edge"
+glyph = "*"
+desktop_id = "microsoft-edge.desktop"
+command = "microsoft-edge"
+dnf = []
+flatpak = "com.microsoft.Edge"
+
+[[app]]
+id = "konsole"
+kind = "terminal"
+label = "Konsole"
+glyph = "*"
+desktop_id = "org.kde.konsole.desktop"
+command = "konsole"
+dnf = ["konsole"]
+
+[[app]]
+id = "ghostty"
+kind = "terminal"
+label = "Ghostty"
+glyph = "*"
+desktop_id = "com.mitchellh.ghostty.desktop"
+command = "ghostty"
+dnf = []
+flatpak = "com.mitchellh.ghostty"
+
+[[app]]
+id = "kitty"
+kind = "terminal"
+label = "Kitty"
+glyph = "*"
+desktop_id = "kitty.desktop"
+command = "kitty"
+dnf = ["kitty"]
+
+[[app]]
+id = "foot"
+kind = "terminal"
+label = "Foot"
+glyph = "*"
+desktop_id = "foot.desktop"
+command = "foot"
+dnf = ["foot"]
+
+[[app]]
+id = "code"
+kind = "editor"
+label = "Code"
+glyph = "*"
+desktop_id = "code.desktop"
+command = "code"
+dnf = []
+flatpak = "com.visualstudio.code"
+
+[[app]]
+id = "kate"
+kind = "editor"
+label = "Kate"
+glyph = "*"
+desktop_id = "org.kde.kate.desktop"
+command = "kate"
+dnf = ["kate"]
+
+[[app]]
+id = "nvim"
+kind = "editor"
+label = "Nvim"
+glyph = "*"
+desktop_id = "nvim.desktop"
+command = "nvim"
+dnf = ["neovim"]
+
+[[app]]
+id = "helix"
+kind = "editor"
+label = "Helix"
+glyph = "*"
+desktop_id = "helix.desktop"
+command = "helix"
+dnf = ["helix"]
+
+[[app]]
+id = "zed"
+kind = "editor"
+label = "Zed"
+glyph = "*"
+desktop_id = "dev.zed.Zed.desktop"
+command = "zed"
+dnf = []
+flatpak = "dev.zed.Zed"

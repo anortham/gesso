@@ -6,7 +6,7 @@ Non-graphical tests must run on a machine with no Plasma session. That includes 
 
 | Command | Owns |
 |---|---|
-| `./test/cli` | Router, metadata lint, theme list/set against a fake `$HOME` |
+| `./test/cli` | Router, metadata lint, theme list/set, and default/pkg against a fake `$HOME` |
 | `./test/all` | Runs `./test/cli`, later other suites, continues after a failure, non-zero if any failed |
 
 There is no graphical acceptance suite in v1. Do not open a nested Plasma to prove theme set. File generation plus a stub `plasma-apply-colorscheme` on `PATH` is the proof.
@@ -22,11 +22,13 @@ Each suite sources `test/lib.sh` and calls `gesso_test_init`, which:
 - Puts a stub directory and `$ROOT/bin` first on `PATH`
 - Uses `pass "description"` / `fail "description"` (first fail exits the suite)
 
-Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write a user theme overlay without affecting `test/cli.d/theme-test.sh`.
+Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write a user theme overlay without affecting `test/cli.d/theme-test.sh`. Default and pkg tests live in `test/cli.d/default-test.sh`.
 
 ## Stubs
 
-Never call real `dnf`, `flatpak`, `pkexec`, `plasma-apply-colorscheme`, or `gsettings` in unit tests. Drop executable stubs in the test `PATH` that append argv to `$HOME/gesso-stub.log`.
+Never call real `dnf`, `flatpak`, `pkexec`, `sudo`, `xdg-settings`, `plasma-apply-colorscheme`, or `gsettings` in unit tests. Drop executable stubs in the test `PATH` that append argv to `$HOME/gesso-stub.log`.
+
+`gesso_test_init` stubs include `dnf`, `flatpak`, `sudo`, `pkexec`, `xdg-settings`, and `notify-send`. The `dnf` and `flatpak` stubs also create a fake command so a later present-check succeeds. The `sudo` stub logs and execs the rest of argv.
 
 `GESSO_THEME_HEADLESS=1` skips session retints. Theme tests that check generated files still run the stager.
 

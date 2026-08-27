@@ -1,0 +1,59 @@
+#!/bin/bash
+# gesso:summary=Set or print the default browser
+# gesso:args=[id]
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso default browser [id]\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+if (($# == 0)); then
+  current=""
+  if current=$(env -u BROWSER xdg-settings get default-web-browser 2>/dev/null); then
+    ids=$(gesso-catalog-get --kind browser)
+    while IFS= read -r id; do
+      [[ -n $id ]] || continue
+      desktop=$(gesso-catalog-get "$id" desktop_id)
+      if [[ $desktop == "$current" ]]; then
+        printf '%s\n' "$id"
+        exit 0
+      fi
+    done <<< "$ids"
+  fi
+  printf 'unset\n'
+  exit 0
+fi
+
+id=$1
+kind=""
+if kind=$(gesso-catalog-get "$id" kind 2>/dev/null); then
+  :
+else
+  printf 'Unknown browser: %s\n' "$id" >&2
+  exit 1
+fi
+
+if [[ $kind != "browser" ]]; then
+  printf 'Unknown browser: %s\n' "$id" >&2
+  exit 1
+fi
+
+app_cmd=$(gesso-catalog-get "$id" command)
+desktop_id=$(gesso-catalog-get "$id" desktop_id)
+label=$(gesso-catalog-get "$id" label)
+
+if ! gesso-cmd-present "$app_cmd"; then
+  gesso pkg add "$id"
+fi
+
+env -u BROWSER xdg-settings set default-web-browser "$desktop_id"
+
+if command -v notify-send >/dev/null; then
+  notify-send "$label is now the default browser"
+fi

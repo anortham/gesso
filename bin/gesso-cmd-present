@@ -1,0 +1,14 @@
+#!/bin/bash
+# gesso:summary=Exit 0 if every named command is on PATH
+# gesso:hidden=true
+
+set -euo pipefail
+if (($# == 0)); then
+  exit 1
+fi
+for cmd in "$@"; do
+  if ! command -v "$cmd" >/dev/null; then
+    exit 1
+  fi
+done
+exit 0
