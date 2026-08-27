@@ -13,6 +13,7 @@ gesso/
   default/themed/*.tpl      templates rendered by theme set (phase 1)
   themes/<name>/colors.toml first-party palettes
   setup/                    Kirigami Gesso Setup (phase 3)
+  setup/org.gesso.setup.desktop  Exec=gesso setup
   test/cli                  router + theme tests
   test/all                  aggregate runner
   docs/                     how the system is shaped
@@ -20,7 +21,7 @@ gesso/
   packaging/                RPM spec later (phase 5)
 ```
 
-Phase 0 creates `bin/`, `themes/tokyo-night/colors.toml`, and `test/`. Later phases add the rest. Do not create empty directories ahead of the plan that owns them.
+Phase 0 creates `bin/`, `themes/tokyo-night/colors.toml`, and `test/`. Phase 3 adds `setup/` and `setup/org.gesso.setup.desktop`. Later phases add the rest. Do not create empty directories ahead of the plan that owns them.
 
 ## Installed (Fedora)
 
@@ -35,7 +36,8 @@ The `gesso-plasma` RPM (phase 3+):
 
 | Source | Installed at |
 |---|---|
-| Setup desktop file + binary | `/usr/bin/gesso-setup`, `/usr/share/applications/` |
+| Setup binary | `/usr/bin/gesso-setup` |
+| `setup/org.gesso.setup.desktop` | `/usr/share/applications/` |
 | Look-and-Feel, if any | `~/.local/share/plasma/look-and-feel/` at apply time, not `/usr`, so uninstall and Aurora both work |
 
 `$GESSO_PATH` is `/usr/share/gesso` on an installed system. A git checkout of `bin/gesso` may default it to the repo root when the env var is unset.

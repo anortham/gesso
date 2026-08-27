@@ -8,5 +8,7 @@
 | [2026-08-26-phase-1.md](2026-08-26-phase-1.md) | Theme engine. Done. |
 | [2026-08-27-phase-2-defaults-design.md](2026-08-27-phase-2-defaults-design.md) | Defaults spec. Approved. |
 | [2026-08-27-phase-2.md](2026-08-27-phase-2.md) | Defaults. Done. |
+| [2026-08-27-phase-3-setup-design.md](2026-08-27-phase-3-setup-design.md) | Setup spec. Approved. |
+| [2026-08-27-phase-3.md](2026-08-27-phase-3.md) | Setup app. Done. |
 
-Later: phase 3 Setup app, phase 4 agents, phase 5 COPR. Do not write those plans until phase 2's `./test/all` is green.
+Later: phase 4 agents, phase 5 COPR. Do not write those plans until phase 3's `./test/all` is green.
