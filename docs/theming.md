@@ -48,16 +48,20 @@ Canonical names win if a legacy `bg` / `fg` pair is also present. Derived: `sele
 
 `gesso theme set <name>`:
 
-1. Build `~/.local/state/gesso/current/next-theme` from the first-party theme, then overlay the user theme.
-2. Render `$GESSO_PATH/default/themed/*.tpl` and `~/.config/gesso/themed/*.tpl` (user templates win on output filename). Do not overwrite a file the theme already shipped.
-3. `flock`, then swap next-theme to `~/.local/state/gesso/current/theme` and write `theme.name`.
-4. Write a Plasma color scheme to `~/.local/share/color-schemes/Gesso.colors` and run `plasma-apply-colorscheme Gesso` when a session is available.
-5. Write Konsole (and other terminal) configs under `~/.local/share` / `~/.config` as each template specifies.
-6. Set GTK `org.gnome.desktop.interface color-scheme` to `prefer-dark` or `prefer-light` from `mode`.
-7. Run `post_theme` retints in parallel (terminals that are running, VS Code, browser chrome). Missing binaries are skipped, not errors.
-8. Run `~/.config/gesso/hooks/theme-set*` with the theme name as `$1`.
+1. Reject names that do not match `^[a-z0-9]+(-[a-z0-9]+)*$` with `Unknown theme:`. Canonical theme dirs must stay under `$GESSO_PATH/themes` or `~/.config/gesso/themes`.
+2. Take a lock at `${XDG_RUNTIME_DIR:-~/.local/state/gesso}/gesso-theme-set.lock`. Never `/tmp`.
+3. Build `~/.local/state/gesso/current/next-theme` from the first-party theme, then overlay the user theme. Require `mode` (`dark` or `light`), `accent`, `background`, and `foreground`.
+4. Render `$GESSO_PATH/default/themed/*.tpl` and `~/.config/gesso/themed/*.tpl` (user templates win on output filename). Do not overwrite a file the theme already shipped. If any file in next-theme still contains `{{`, delete next-theme and exit 1.
+5. Write `~/.local/share/color-schemes/Gesso.colors`. When a session is available, keep the previous file aside and run `plasma-apply-colorscheme Gesso`. On failure, restore the aside file, delete next-theme, and leave `current/theme` unchanged.
+6. When `~/.config/Code/User` exists, parse `settings.json` (JSON or JSONC: comments and trailing commas) and stage the merged `workbench.colorCustomizations` before copying Konsole or Kitty live files. Invalid `settings.json` is a hard error and does not change those live files. Gesso rewrites `settings.json` as JSON, so comments are not kept. On success, copy Konsole, Kitty, and VS Code live files from next-theme, write `gesso-theme.json`, and publish the staged merge. Write the previous `workbench.colorCustomizations` value (JSON `null` if the key was absent) to `~/.local/state/gesso/vscode-colorCustomizations.json` only if that backup does not already exist.
+7. Swap next-theme to `~/.local/state/gesso/current/theme` and write `theme.name`.
+8. Set GTK `org.gnome.desktop.interface color-scheme` to `prefer-dark` or `prefer-light` from `mode`.
+9. Retint a running Kitty when `kitten` is on `PATH`. Missing binaries are skipped, not errors.
+10. Run `~/.config/gesso/hooks/theme-set*` with the theme name as `$1`.
 
-Headless / tests set `GESSO_THEME_HEADLESS=1` and skip Plasma, GTK, and retints. Staging and file generation still run.
+Headless / tests set `GESSO_THEME_HEADLESS=1` and skip Plasma, GTK, and live retints. Validation, file swap, and the VS Code `settings.json` merge still run.
+
+`gesso theme restore` writes the backed-up `workbench.colorCustomizations` key (or deletes it if the backup is JSON `null`) when the backup file exists, then deletes the backup file, then applies `BreezeDark` or `Breeze` from the last theme `mode`.
 
 `gesso theme set` is idempotent. A second apply of the same theme must not fail.
 
@@ -68,9 +72,9 @@ Headless / tests set `GESSO_THEME_HEADLESS=1` and skip Plasma, GTK, and retints.
 | `Gesso.colors.tpl` | `Gesso.colors` | `~/.local/share/color-schemes/Gesso.colors` |
 | `Gesso.colorscheme.tpl` | `Gesso.colorscheme` | `~/.local/share/konsole/Gesso.colorscheme` |
 | `kitty.conf.tpl` | `kitty.conf` | `~/.config/kitty/gesso-theme.conf` when `kitty` is on `PATH` or `~/.config/kitty` already exists; otherwise staged theme only |
-| `vscode.json.tpl` | `vscode.json` | `~/.config/Code/User/gesso-theme.json` when that `User` directory exists; otherwise staged theme only |
+| `vscode.json.tpl` | `vscode.json` | `~/.config/Code/User/gesso-theme.json` when that `User` directory exists, plus merge into `settings.json` `workbench.colorCustomizations`; otherwise staged theme only |
 
-Gesso does not replace the user's main Kitty or VS Code config. It does not write `kitty.conf` or `settings.json`. Users may `include gesso-theme.conf` from their own Kitty config.
+Gesso does not replace the user's main Kitty or VS Code config. It does not write `kitty.conf`. It may merge `workbench.colorCustomizations` into `settings.json` and must restore that key. It does not replace the rest of `settings.json`. Users may `include gesso-theme.conf` from their own Kitty config.
 
 ## Plasma mapping (phase 1)
 

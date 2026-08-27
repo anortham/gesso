@@ -10,6 +10,7 @@ Kirigami.ScrollablePage {
 
   property var groups: []
   property string errorText: ""
+  property bool busy: false
 
   Component.onCompleted: loadGroups()
 
@@ -101,12 +102,8 @@ Kirigami.ScrollablePage {
         app.label = label
     }
 
-    var commandResult = gessoCli.runBinary("gesso-catalog-get", [id, "command"])
-    if (!recordError(commandResult)) {
-      var command = commandResult.stdout.trim()
-      var presentResult = gessoCli.runBinary("gesso-cmd-present", [command])
-      app.present = presentResult.exitCode == 0
-    }
+    var presentResult = gessoCli.runBinary("gesso-app-present", [id])
+    app.present = presentResult.exitCode == 0
 
     return app
   }
@@ -128,6 +125,8 @@ Kirigami.ScrollablePage {
   }
 
   function applyDefault(kind) {
+    if (page.busy || gessoCli.busy)
+      return
     errorText = ""
     var id = ""
     var i
@@ -140,12 +139,21 @@ Kirigami.ScrollablePage {
     if (id.length === 0)
       return
 
-    var result = gessoCli.run(["default", kind, id])
-    if (result.exitCode != 0) {
-      errorText = result.stderr
-      return
+    page.busy = true
+    gessoCli.runAsync(["default", kind, id])
+  }
+
+  Connections {
+    target: gessoCli
+    enabled: page.busy
+    function onFinished(result) {
+      page.busy = false
+      if (result.exitCode != 0) {
+        page.errorText = result.stderr
+        return
+      }
+      page.loadGroups()
     }
-    loadGroups()
   }
 
   ColumnLayout {
@@ -189,7 +197,7 @@ Kirigami.ScrollablePage {
         Controls.Button {
           Layout.alignment: Qt.AlignRight
           text: "Set default"
-          enabled: groupBox.group.apps.length > 0
+          enabled: groupBox.group.apps.length > 0 && !page.busy && !gessoCli.busy
           onClicked: page.applyDefault(groupBox.group.kind)
         }
       }

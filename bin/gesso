@@ -56,6 +56,29 @@ join_hyphen() {
   printf '%s' "$joined"
 }
 
+list_group_commands() {
+  local group=$1
+  local prefix="gesso-${group}-"
+  local cmd base rest name
+  local -a names=()
+  for cmd in "$GESSO_BIN_DIR/$prefix"*; do
+    [[ -x $cmd ]] || continue
+    if head -n 80 "$cmd" | grep -q '^# gesso:hidden=true'; then
+      continue
+    fi
+    base=${cmd##*/}
+    rest=${base#"$prefix"}
+    name=${rest//-/ }
+    names+=("$name")
+  done
+  if ((${#names[@]} == 0)); then
+    return 1
+  fi
+  while IFS= read -r name; do
+    printf '%s %s\n' "$group" "$name"
+  done < <(printf '%s\n' "${names[@]}" | sort)
+}
+
 words=("$@")
 i=${#words[@]}
 found=""
@@ -72,12 +95,18 @@ while ((i >= 1)); do
 done
 
 if [[ -z $found ]]; then
+  if (($# == 1)) && list_group_commands "$1"; then
+    exit 0
+  fi
   printf 'Unknown command: gesso %s\n' "$*" >&2
   usage >&2
   exit 1
 fi
 
 for arg in "${leftover[@]+"${leftover[@]}"}"; do
+  if [[ $arg == "--" ]]; then
+    break
+  fi
   if [[ $arg == "--help" || $arg == "-h" ]]; then
     exec "$GESSO_BIN_DIR/$found" --help
   fi

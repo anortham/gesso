@@ -118,8 +118,8 @@ id = "helix"
 kind = "editor"
 label = "Helix"
 glyph = "*"
-desktop_id = "helix.desktop"
-command = "helix"
+desktop_id = "Helix.desktop"
+command = "hx"
 dnf = ["helix"]
 
 [[app]]

@@ -27,6 +27,11 @@ if (($# == 0)); then
           printf '%s\n' "$id"
           exit 0
         fi
+        app_flatpak=$(gesso-catalog-get "$id" flatpak)
+        if [[ -n $app_flatpak && $app_flatpak.desktop == "$first" ]]; then
+          printf '%s\n' "$id"
+          exit 0
+        fi
       done <<< "$ids"
     fi
   fi
@@ -48,13 +53,13 @@ if [[ $kind != "terminal" ]]; then
   exit 1
 fi
 
-app_cmd=$(gesso-catalog-get "$id" command)
-desktop_id=$(gesso-catalog-get "$id" desktop_id)
 label=$(gesso-catalog-get "$id" label)
 
-if ! gesso-cmd-present "$app_cmd"; then
+if ! gesso-app-present "$id"; then
   gesso pkg add "$id"
 fi
+
+desktop_id=$(gesso-app-present --desktop "$id")
 
 mkdir -p "$(dirname "$list")"
 lines=("$desktop_id")

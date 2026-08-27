@@ -20,11 +20,10 @@ if (($# == 0)); then
 fi
 
 id=$1
-app_cmd=$(gesso-catalog-get "$id" command)
 packages=$(gesso-catalog-get "$id" dnf)
 app_flatpak=$(gesso-catalog-get "$id" flatpak)
 
-if gesso-cmd-present "$app_cmd"; then
+if gesso-app-present "$id"; then
   exit 0
 fi
 
@@ -40,7 +39,7 @@ elevate() {
 
 if [[ -n $packages ]]; then
   if elevate dnf install -y $packages; then
-    if gesso-cmd-present "$app_cmd"; then
+    if gesso-app-present "$id"; then
       exit 0
     fi
   fi
@@ -48,7 +47,7 @@ fi
 
 if [[ -n $app_flatpak ]]; then
   if elevate flatpak install -y flathub "$app_flatpak"; then
-    if gesso-cmd-present "$app_cmd"; then
+    if gesso-app-present "$id"; then
       exit 0
     fi
   fi

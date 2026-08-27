@@ -60,3 +60,16 @@ pass "AgentsPage uses agent catalog CLI"
 hits=$(grep -REq 'firefox\.desktop|org\.mozilla\.firefox|org\.chromium\.Chromium|com\.google\.Chrome' "$ROOT/setup" && echo yes || echo no)
 [[ $hits == "no" ]] || fail "setup tree has no hardcoded catalog ids"
 pass "setup tree has no hardcoded catalog ids"
+
+if grep -RFq 'waitForFinished(-1)' "$ROOT/setup"; then
+  fail "setup has no waitForFinished(-1)"
+fi
+pass "setup has no waitForFinished(-1)"
+
+grep -q 'startDetached' "$ROOT/setup/qml/AgentsPage.qml" || fail "Launch Agent uses startDetached"
+grep -q 'gesso-app-present' "$ROOT/setup/qml/AgentsPage.qml" || fail "Launch Agent uses gesso-app-present"
+pass "Launch Agent detaches Konsole"
+
+grep -q 'runAsync' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage apply uses runAsync"
+grep -q 'runAsync' "$ROOT/setup/qml/InstallPage.qml" || fail "InstallPage install uses runAsync"
+pass "Defaults and Install apply asynchronously"

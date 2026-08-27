@@ -9,10 +9,10 @@ The spec is [`packaging/gesso.spec`](../packaging/gesso.spec). Human COPR steps 
 | Package | Contents | Requires |
 |---|---|---|
 | `gesso` | `bin/gesso*`, `themes/`, `default/`, `data/` | bash, python3. Recommends plasma-workspace |
-| `gesso-plasma` | `/usr/libexec/gesso/gesso-setup`, desktop file | `gesso`, Kirigami/Qt6 |
+| `gesso-plasma` | `/usr/libexec/gesso/gesso-setup`, desktop file | `gesso`, Kirigami/Qt6. Recommends `gesso-agents` |
 | `gesso-agents` | no files (metapackage) | `gesso`, `mise` |
 
-`dnf install gesso-plasma` is the user-facing install. It pulls `gesso`. `gesso-agents` exists so `dnf install gesso-agents` pulls `mise`. Agent scripts already live in `gesso`.
+`dnf install gesso-plasma` is the user-facing install. It pulls `gesso`. It Recommends `gesso-agents`, so Fedora also pulls `mise` when Recommends are on. `gesso-agents` exists so `dnf install gesso-agents` pulls `mise`. Agent scripts already live in `gesso`. Do not hard-Require `gesso-agents` on `gesso-plasma`.
 
 ## Install paths
 
@@ -35,9 +35,11 @@ Same files. Do not write `/usr` except the RPM payload. Theme apply writes `~/.l
 
 ## COPR
 
+Tag `v0.1.0` is a human step after merge. Do not create the tag from this branch. Then create the COPR for Fedora 44, build, and inspect the three RPMs. See [`packaging/README.md`](../packaging/README.md).
+
 ```bash
 dnf copr enable <owner>/gesso
 dnf install gesso-plasma
 ```
 
-`<owner>` is a placeholder until someone creates the project. Do not invent an owner. Creating and building the COPR is a human step. See [`packaging/README.md`](../packaging/README.md).
+`<owner>` is a placeholder until someone creates the project. Do not invent an owner.

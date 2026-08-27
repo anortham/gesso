@@ -47,10 +47,14 @@ if [[ -n $prompt ]]; then
   argv+=("$prompt")
 fi
 
-bin=${argv[0]}
-if ! gesso-cmd-present "$bin"; then
-  printf '%s is not installed\n' "$bin" >&2
-  exit 1
+if command -v mise >/dev/null; then
+  argv=(mise exec -- "${argv[@]}")
+else
+  bin=${argv[0]}
+  if ! gesso-cmd-present "$bin"; then
+    printf '%s is not installed\n' "$bin" >&2
+    exit 1
+  fi
 fi
 
 if [[ $PWD == $HOME && -d $HOME/Work ]]; then

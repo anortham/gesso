@@ -27,6 +27,7 @@ Summary: Kirigami Setup app for Gesso
 Requires: gesso
 Requires: kf6-kirigami
 Requires: qt6-qtdeclarative
+Recommends: gesso-agents
 
 %description plasma
 Kirigami Gesso Setup. Install this package for the desktop entry and GUI.

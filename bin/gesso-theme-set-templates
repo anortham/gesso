@@ -102,3 +102,8 @@ render_dir() {
 
 render_dir "${HOME}/.config/gesso/themed"
 render_dir "${GESSO_PATH}/default/themed"
+
+if grep -R -q -- '{{' "$NEXT"; then
+  printf 'unresolved template placeholder\n' >&2
+  exit 1
+fi

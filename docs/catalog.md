@@ -24,8 +24,9 @@ Rules:
 
 - `kind` decides which default command owns the row (`gesso default browser` only lists `kind = "browser"`).
 - `dnf` is tried first, in order. If every RPM is missing from Fedora/RPM Fusion and `flatpak` is set, install that Flatpak.
-- `command` is what `gesso-cmd-present` checks before offering install.
-- `desktop_id` is what `xdg-settings set default-web-browser` (browsers) or `xdg-terminals.list` (terminals) gets.
+- `gesso-app-present <id>` is the presence check. Host first: `gesso-cmd-present` on `command`. Else `flatpak info` on `flatpak`.
+- `command` is the host binary. Helix is `hx`.
+- `desktop_id` is the host desktop file. When only Flatpak is present, defaults use `<flatpak>.desktop`.
 - Editors write `id` to `~/.local/state/gesso/defaults/editor`. The launch command is `command`.
 
 v1 browser ids: `firefox`, `chromium`, `chrome`, `brave`, `edge`. Terminal ids: `konsole`, `ghostty`, `kitty`, `foot`. Editor ids: `code`, `kate`, `nvim`, `helix`, `zed`.
@@ -46,7 +47,9 @@ prompt_flag = "--"
 ```
 
 - No agent is default until the user runs `gesso default agent <id>`.
-- Install is `mise use -g <mise>`.
+- If `mise` is missing, `gesso default agent` installs it with `dnf install -y mise`.
+- If `mise which <launch_bin>` fails, install is `mise use -g <mise>`. Recheck `mise which`. Write the default file only after that check succeeds.
+- Launch is `mise exec -- <launch...>` when `mise` is on PATH. Else the host binary.
 - Launch cwd: if `$PWD` is `$HOME` and `$HOME/Work` exists, `cd` there (agents refuse to trust `$HOME`).
 - `gesso agent` with none chosen exits 1 and prints `gesso default agent <name>`. The Setup app opens the Agents page instead.
 
@@ -56,7 +59,7 @@ Launch flags (keep in the TOML, not in a `case`):
 |---|---|
 | claude | `--permission-mode auto` |
 | grok | `--permission-mode bypassPermissions` |
-| codex | `--approve-for-me` |
+| codex | `--ask-for-approval never` |
 | opencode | `--auto` |
 | copilot | `--allow-all` |
 | crush | `--yolo` / `crush run` when a prompt is passed |
@@ -65,7 +68,7 @@ Launch flags (keep in the TOML, not in a `case`):
 
 For defaults and extra apps:
 
-1. If `command` is on `PATH`, skip install.
+1. If `gesso-app-present <id>` exits 0, skip install.
 2. Else run `gesso pkg add` for `dnf`, or Flatpak, as the row says.
 3. Then set the default (XDG or state file).
 4. Notify with `label`.

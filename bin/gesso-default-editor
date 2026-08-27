@@ -41,10 +41,9 @@ if [[ $kind != "editor" ]]; then
   exit 1
 fi
 
-app_cmd=$(gesso-catalog-get "$id" command)
 label=$(gesso-catalog-get "$id" label)
 
-if ! gesso-cmd-present "$app_cmd"; then
+if ! gesso-app-present "$id"; then
   gesso pkg add "$id"
 fi
 
