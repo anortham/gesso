@@ -1,0 +1,76 @@
+#!/bin/bash
+set -euo pipefail
+
+GESSO_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+GESSO_ROOT=$(cd -- "$GESSO_BIN_DIR/.." && pwd)
+
+if [[ -z ${GESSO_PATH:-} ]]; then
+  if [[ -d $GESSO_ROOT/themes ]]; then
+    export GESSO_PATH=$GESSO_ROOT
+  else
+    export GESSO_PATH=/usr/share/gesso
+  fi
+fi
+
+export PATH="$GESSO_BIN_DIR:$PATH"
+
+usage() {
+  cat <<'EOF'
+Usage: gesso <command> [args]
+
+Commands:
+  theme list    List available themes
+  commands      List commands
+
+Use gesso <command> --help for a command's usage.
+EOF
+}
+
+if (($# == 0)) || [[ $1 == "--help" || $1 == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $1 == "commands" ]]; then
+  usage
+  exit 0
+fi
+
+join_hyphen() {
+  local joined="$1"
+  shift
+  local word
+  for word in "$@"; do
+    joined+="-$word"
+  done
+  printf '%s' "$joined"
+}
+
+words=("$@")
+i=${#words[@]}
+found=""
+leftover=()
+
+while ((i >= 1)); do
+  probe="gesso-$(join_hyphen "${words[@]:0:i}")"
+  if [[ -x $GESSO_BIN_DIR/$probe ]]; then
+    found=$probe
+    leftover=("${words[@]:i}")
+    break
+  fi
+  ((i--)) || true
+done
+
+if [[ -z $found ]]; then
+  printf 'Unknown command: gesso %s\n' "$*" >&2
+  usage >&2
+  exit 1
+fi
+
+for arg in "${leftover[@]+"${leftover[@]}"}"; do
+  if [[ $arg == "--help" || $arg == "-h" ]]; then
+    exec "$GESSO_BIN_DIR/$found" --help
+  fi
+done
+
+exec "$GESSO_BIN_DIR/$found" "${leftover[@]+"${leftover[@]}"}"

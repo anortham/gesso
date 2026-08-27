@@ -24,3 +24,12 @@ if [[ ! -x $ROOT/bin/gesso ]]; then
 fi
 
 pass "bin/gesso is executable"
+
+help_out=$(gesso --help)
+[[ $help_out == *theme* ]] || fail "gesso --help mentions theme" "$help_out"
+pass "gesso --help mentions theme"
+
+if gesso not-a-command >/tmp/gesso-unknown 2>&1; then
+  fail "unknown command exits non-zero"
+fi
+pass "unknown command exits non-zero"
