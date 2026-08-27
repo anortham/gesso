@@ -1,0 +1,117 @@
+#!/bin/bash
+# gesso:summary=Apply a Gesso theme
+# gesso:args=<name>
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso theme set <name>\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+if (($# == 0)); then
+  usage >&2
+  exit 1
+fi
+
+if [[ -z ${GESSO_PATH:-} ]]; then
+  printf 'GESSO_PATH is not set\n' >&2
+  exit 1
+fi
+
+name=$1
+if [[ ! -f $GESSO_PATH/themes/$name/colors.toml && ! -f $HOME/.config/gesso/themes/$name/colors.toml ]]; then
+  printf 'Unknown theme: %s\n' "$name" >&2
+  exit 1
+fi
+
+state_dir=$HOME/.local/state/gesso/current
+next=$state_dir/next-theme
+current=$state_dir/theme
+lock=${XDG_RUNTIME_DIR:-/tmp}/gesso-theme-set.lock
+
+mkdir -p "$state_dir"
+exec 9>"$lock"
+flock 9
+
+rm -rf "$next"
+mkdir -p "$next"
+if [[ -d $GESSO_PATH/themes/$name ]]; then
+  cp -a "$GESSO_PATH/themes/$name/." "$next/"
+fi
+if [[ -d $HOME/.config/gesso/themes/$name ]]; then
+  cp -a "$HOME/.config/gesso/themes/$name/." "$next/"
+fi
+if [[ ! -f $next/colors.toml ]]; then
+  printf 'colors.toml missing after overlay\n' >&2
+  exit 1
+fi
+
+export GESSO_NEXT_THEME=$next
+gesso-theme-set-templates
+
+rm -rf "$current"
+mv "$next" "$current"
+printf '%s\n' "$name" >"$state_dir/theme.name"
+
+mkdir -p "$HOME/.local/share/color-schemes"
+if [[ -f $current/Gesso.colors ]]; then
+  cp "$current/Gesso.colors" "$HOME/.local/share/color-schemes/Gesso.colors"
+fi
+
+mkdir -p "$HOME/.local/share/konsole" "$HOME/.config"
+if [[ -f $current/Gesso.colorscheme ]]; then
+  cp "$current/Gesso.colorscheme" "$HOME/.local/share/konsole/Gesso.colorscheme"
+fi
+printf '%s\n' '[Appearance]' 'ColorScheme=Gesso' '' '[General]' 'Name=Gesso' >"$HOME/.local/share/konsole/Gesso.profile"
+if [[ -f $HOME/.config/konsolerc ]]; then
+  if grep -q '^DefaultProfile=' "$HOME/.config/konsolerc"; then
+    sed -i 's/^DefaultProfile=.*/DefaultProfile=Gesso.profile/' "$HOME/.config/konsolerc"
+  else
+    printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Gesso.profile' >>"$HOME/.config/konsolerc"
+  fi
+else
+  printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Gesso.profile' >"$HOME/.config/konsolerc"
+fi
+
+if [[ -f $current/kitty.conf ]]; then
+  if command -v kitty >/dev/null || [[ -d $HOME/.config/kitty ]]; then
+    mkdir -p "$HOME/.config/kitty"
+    cp "$current/kitty.conf" "$HOME/.config/kitty/gesso-theme.conf"
+  fi
+fi
+if [[ -f $current/vscode.json && -d $HOME/.config/Code/User ]]; then
+  cp "$current/vscode.json" "$HOME/.config/Code/User/gesso-theme.json"
+fi
+
+mode=$(grep -E '^mode[[:space:]]*=' "$current/colors.toml" | head -n1 | cut -d'"' -f2)
+
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
+  if ! command -v plasma-apply-colorscheme >/dev/null; then
+    printf 'plasma-apply-colorscheme is not available\n' >&2
+    exit 1
+  fi
+  plasma-apply-colorscheme Gesso
+  if command -v gsettings >/dev/null; then
+    if [[ $mode == "light" ]]; then
+      gsettings set org.gnome.desktop.interface color-scheme prefer-light || true
+    else
+      gsettings set org.gnome.desktop.interface color-scheme prefer-dark || true
+    fi
+  fi
+fi
+
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]] && command -v kitty >/dev/null && command -v kitten >/dev/null; then
+  kitten @ set-colors --all "$HOME/.config/kitty/gesso-theme.conf" >/dev/null 2>&1 || true
+fi
+
+shopt -s nullglob
+for hook in "$HOME/.config/gesso/hooks"/theme-set*; do
+  [[ -x $hook ]] || continue
+  "$hook" "$name"
+done
+

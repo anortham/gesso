@@ -20,6 +20,7 @@ Usage: gesso <command> [args]
 
 Commands:
   theme list    List available themes
+  theme set     Apply a Gesso theme
   commands      List commands
 
 Use gesso <command> --help for a command's usage.

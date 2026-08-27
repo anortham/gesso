@@ -13,18 +13,20 @@ There is no graphical acceptance suite in v1. Do not open a nested Plasma to pro
 
 ## Contract
 
-`./test/cli` is a bash script. It:
+`./test/cli` is a thin driver. It runs each `test/cli.d/*-test.sh` as a subprocess and stops at the first failing suite.
 
-- Resolves `ROOT` from its own location
-- Exports `GESSO_PATH=$ROOT` and a temp `HOME`
-- Puts `$ROOT/bin` and a stub `PATH` directory first
-- Uses `pass "description"` / `fail "description"` (first fail exits the script)
+Each suite sources `test/lib.sh` and calls `gesso_test_init`, which:
 
-Phase 0 keeps all CLI assertions in `./test/cli`. When that file is painful to scroll, split to `test/cli.d/*-test.sh` and a thin `./test/cli` driver. Do not split before the second suite exists.
+- Resolves `ROOT` from the lib location
+- Exports `GESSO_PATH=$ROOT` and a fresh temp `HOME`
+- Puts a stub directory and `$ROOT/bin` first on `PATH`
+- Uses `pass "description"` / `fail "description"` (first fail exits the suite)
+
+Suites do not share `$HOME`. Router tests in `test/cli.d/cli-test.sh` can write a user theme overlay without affecting `test/cli.d/theme-test.sh`.
 
 ## Stubs
 
-Never call real `dnf`, `flatpak`, `pkexec`, `plasma-apply-colorscheme`, or `gsettings` in unit tests. Drop executable stubs in the test `PATH` that record their argv to a log file.
+Never call real `dnf`, `flatpak`, `pkexec`, `plasma-apply-colorscheme`, or `gsettings` in unit tests. Drop executable stubs in the test `PATH` that append argv to `$HOME/gesso-stub.log`.
 
 `GESSO_THEME_HEADLESS=1` skips session retints. Theme tests that check generated files still run the stager.
 

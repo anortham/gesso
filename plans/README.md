@@ -3,6 +3,8 @@
 | File | Status |
 |---|---|
 | [2026-08-26-product.md](2026-08-26-product.md) | Brief. Locked. |
-| [2026-08-26-phase-0.md](2026-08-26-phase-0.md) | First implementation. Next session starts here. |
+| [2026-08-26-phase-0.md](2026-08-26-phase-0.md) | CLI skeleton. Done. |
+| [2026-08-26-phase-1-theme-engine-design.md](2026-08-26-phase-1-theme-engine-design.md) | Theme engine spec. Approved. |
+| [2026-08-26-phase-1.md](2026-08-26-phase-1.md) | Theme engine. Done. |
 
-Later: phase 1 theme engine, phase 2 defaults, phase 3 Setup app, phase 4 agents, phase 5 COPR. Do not write those plans until phase 0's `./test/all` is green.
+Later: phase 2 defaults, phase 3 Setup app, phase 4 agents, phase 5 COPR. Do not write those plans until phase 1's `./test/all` is green.

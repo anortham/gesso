@@ -1,0 +1,104 @@
+#!/bin/bash
+# gesso:summary=Render Gesso theme templates
+# gesso:hidden=true
+
+set -euo pipefail
+
+NEXT=${GESSO_NEXT_THEME:-$HOME/.local/state/gesso/current/next-theme}
+COLORS=$NEXT/colors.toml
+declare -A THEME_COLORS=()
+
+hex_to_rgb() {
+  local hex=${1#\#}
+  printf '%d,%d,%d' "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
+}
+
+mix_color() {
+  local start=${1#\#}
+  local end=${2#\#}
+  local amount=$3
+  awk -v start="$start" -v end="$end" -v amount="$amount" '
+    function hv(c) { return index("0123456789abcdef", tolower(c)) - 1 }
+    function pair(h, i) { return hv(substr(h, i, 1)) * 16 + hv(substr(h, i + 1, 1)) }
+    BEGIN {
+      if (amount ~ /%$/) { sub(/%$/, "", amount); amount = amount / 100 }
+      else { amount += 0; if (amount > 1) amount = amount / 100 }
+      if (amount < 0) amount = 0
+      if (amount > 1) amount = 1
+      r = int(pair(start, 1) * (1 - amount) + pair(end, 1) * amount + 0.5)
+      g = int(pair(start, 3) * (1 - amount) + pair(end, 3) * amount + 0.5)
+      b = int(pair(start, 5) * (1 - amount) + pair(end, 5) * amount + 0.5)
+      printf "#%02x%02x%02x\n", r, g, b
+    }
+  '
+}
+
+[[ -f $COLORS ]] || { printf 'colors.toml missing after overlay\n' >&2; exit 1; }
+
+while IFS= read -r line || [[ -n $line ]]; do
+  [[ $line =~ ^[[:space:]]*# ]] && continue
+  [[ $line =~ ^[[:space:]]*$ ]] && continue
+  if [[ $line =~ ^([A-Za-z0-9_]+)[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
+    THEME_COLORS[${BASH_REMATCH[1]}]=${BASH_REMATCH[2]}
+  fi
+done <"$COLORS"
+
+if [[ -n ${THEME_COLORS[background]+x} && -z ${THEME_COLORS[bg]+x} ]]; then
+  THEME_COLORS[bg]=${THEME_COLORS[background]}
+fi
+if [[ -n ${THEME_COLORS[bg]+x} && -z ${THEME_COLORS[background]+x} ]]; then
+  THEME_COLORS[background]=${THEME_COLORS[bg]}
+fi
+if [[ -n ${THEME_COLORS[foreground]+x} && -z ${THEME_COLORS[fg]+x} ]]; then
+  THEME_COLORS[fg]=${THEME_COLORS[foreground]}
+fi
+if [[ -n ${THEME_COLORS[fg]+x} && -z ${THEME_COLORS[foreground]+x} ]]; then
+  THEME_COLORS[foreground]=${THEME_COLORS[fg]}
+fi
+if [[ -n ${THEME_COLORS[selection]+x} ]]; then
+  THEME_COLORS[selection_background]=${THEME_COLORS[selection]}
+fi
+if [[ -n ${THEME_COLORS[bright_foreground]+x} ]]; then
+  THEME_COLORS[selection_foreground]=${THEME_COLORS[bright_foreground]}
+fi
+
+render_file() {
+  local tpl=$1
+  local out=$2
+  local content key val
+  content=$(cat "$tpl")
+  while [[ $content =~ \{\{[[:space:]]*mix[[:space:]]+([A-Za-z0-9_]+)[[:space:]]+([A-Za-z0-9_]+)[[:space:]]+([^}]+)[[:space:]]*\}\} ]]; do
+    val=$(mix_color "${THEME_COLORS[${BASH_REMATCH[1]}]-}" "${THEME_COLORS[${BASH_REMATCH[2]}]-}" "$(echo "${BASH_REMATCH[3]}" | tr -d '[:space:]')")
+    content=${content/${BASH_REMATCH[0]}/$val}
+  done
+  for key in "${!THEME_COLORS[@]}"; do
+    val=${THEME_COLORS[$key]}
+    content=${content//"{{ $key }}"/$val}
+    content=${content//"{{ ${key}_strip }}"/${val#\#}}
+    if [[ $val == \#* ]]; then
+      content=${content//"{{ ${key}_rgb }}"/$(hex_to_rgb "$val")}
+    fi
+  done
+  printf '%s' "$content" >"$out"
+  if [[ $content != *$'\n' ]]; then
+    :
+  fi
+}
+
+render_dir() {
+  local dir=$1
+  local tpl base out
+  [[ -d $dir ]] || return 0
+  for tpl in "$dir"/*.tpl; do
+    [[ -f $tpl ]] || continue
+    base=$(basename "$tpl" .tpl)
+    out=$NEXT/$base
+    if [[ -e $out ]]; then
+      continue
+    fi
+    render_file "$tpl" "$out"
+  done
+}
+
+render_dir "${HOME}/.config/gesso/themed"
+render_dir "${GESSO_PATH}/default/themed"
