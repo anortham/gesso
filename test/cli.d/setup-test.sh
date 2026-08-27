@@ -26,3 +26,7 @@ if GESSO_SETUP_BIN=/no/such/gesso-setup gesso setup >/tmp/gesso-setup-missing 2>
   fail "missing setup binary exits non-zero"
 fi
 pass "missing setup binary exits non-zero"
+
+[[ -f $ROOT/setup/CMakeLists.txt ]] || fail "setup CMakeLists exists"
+[[ -f $ROOT/setup/qml/Main.qml ]] || fail "setup Main.qml exists"
+pass "setup skeleton files exist"
