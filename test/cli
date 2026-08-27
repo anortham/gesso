@@ -56,3 +56,12 @@ else
   fail "gesso theme list --help exits 0"
 fi
 pass "gesso theme list --help exits 0"
+
+shopt -s nullglob
+for cmd in "$ROOT/bin"/gesso-*; do
+  [[ -x $cmd ]] || continue
+  if ! head -n 80 "$cmd" | grep -q '^# gesso:summary='; then
+    fail "command has gesso:summary metadata" "$cmd"
+  fi
+done
+pass "every gesso-* command has summary metadata"
