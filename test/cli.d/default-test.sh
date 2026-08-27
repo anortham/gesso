@@ -58,3 +58,38 @@ log=$(cat "$HOME/gesso-stub.log")
 [[ $log == *"dnf install"* ]] && fail "chrome has no dnf packages" "$log"
 [[ $log == *"flatpak install -y flathub com.google.Chrome"* ]] || fail "chrome uses flatpak" "$log"
 pass "pkg add chrome uses flatpak"
+
+if gesso default browser --help >/dev/null 2>&1; then
+  :
+else
+  fail "gesso default browser --help exits 0"
+fi
+pass "gesso default browser --help exits 0"
+
+cur=$(gesso default browser)
+[[ $cur == "unset" ]] || fail "no default browser is unset" "$cur"
+pass "no default browser is unset"
+
+if gesso default browser kate >/tmp/gesso-def-wrong 2>&1; then
+  fail "default browser kate exits non-zero"
+fi
+pass "default browser rejects non-browser id"
+
+rm -f "$HOME/gesso-stub.log"
+# ensure firefox command is missing
+rm -f "$HOME/gesso-stubs/firefox"
+gesso default browser firefox
+got=$(gesso default browser)
+[[ $got == "firefox" ]] || fail "default browser firefox prints firefox" "$got"
+xdg=$(xdg-settings get default-web-browser)
+[[ $xdg == "firefox.desktop" ]] || fail "xdg-settings reports firefox.desktop" "$xdg"
+log=$(cat "$HOME/gesso-stub.log")
+[[ $log == *"dnf install -y firefox"* ]] || fail "missing firefox is installed" "$log"
+[[ $log == *"xdg-settings set default-web-browser firefox.desktop"* ]] || fail "xdg-settings set logged" "$log"
+pass "default browser firefox installs and sets XDG"
+
+rm -f "$HOME/gesso-stub.log"
+gesso default browser firefox
+log=$(cat "$HOME/gesso-stub.log")
+[[ $log == *"dnf install"* ]] && fail "second apply skips dnf" "$log"
+pass "default browser firefox is idempotent"
