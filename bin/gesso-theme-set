@@ -51,6 +51,9 @@ if [[ ! -f $next/colors.toml ]]; then
   exit 1
 fi
 
+export GESSO_NEXT_THEME=$next
+gesso-theme-set-templates
+
 rm -rf "$current"
 mv "$next" "$current"
 printf '%s\n' "$name" >"$state_dir/theme.name"

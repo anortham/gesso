@@ -41,3 +41,15 @@ gesso theme set tokyo-night
 overlay=$(cat "$HOME/.local/state/gesso/current/theme/colors.toml")
 [[ $overlay == *"#ff00aa"* ]] || fail "user overlay wins on colors.toml" "$overlay"
 pass "user overlay wins on colors.toml"
+
+mkdir -p "$HOME/.config/gesso/themed"
+printf 'accent={{ accent }}\nstrip={{ accent_strip }}\nrgb={{ accent_rgb }}\nmix={{ mix background foreground 15%% }}\n' >"$HOME/.config/gesso/themed/extra.conf.tpl"
+gesso theme set tokyo-night
+extra=$HOME/.local/state/gesso/current/theme/extra.conf
+[[ -f $extra ]] || fail "user template rendered"
+extra_got=$(cat "$extra")
+[[ $extra_got == *"accent=#ff00aa"* ]] || fail "user template accent" "$extra_got"
+[[ $extra_got == *"strip=ff00aa"* ]] || fail "user template strip" "$extra_got"
+[[ $extra_got == *"rgb=255,0,170"* ]] || fail "user template rgb" "$extra_got"
+[[ $extra_got == *mix=#* ]] || fail "user template mix looks like hex" "$extra_got"
+pass "user template rendered with placeholders"
