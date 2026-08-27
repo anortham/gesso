@@ -27,14 +27,14 @@ for arg in "$@"; do
 done
 if ((install == 1)); then
   for arg in "$@"; do
-    if [[ $arg == "firefox" ]]; then
-      printf '%s\n' '#!/bin/bash' 'exit 0' >"$stub/firefox"
-      chmod +x "$stub/firefox"
+    if [[ $arg == "install" || $arg == "-y" || $arg == "flathub" ]]; then
+      continue
     fi
-    if [[ $arg == "flathub" || $arg == "com.google.Chrome" ]]; then
-      printf '%s\n' '#!/bin/bash' 'exit 0' >"$stub/google-chrome"
-      chmod +x "$stub/google-chrome"
+    if [[ $arg == *.* ]]; then
+      continue
     fi
+    printf '%s\n' '#!/bin/bash' 'exit 0' >"$stub/$arg"
+    chmod +x "$stub/$arg"
   done
 fi
 exit 0
