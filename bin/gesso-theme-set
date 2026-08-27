@@ -1,0 +1,33 @@
+#!/bin/bash
+# gesso:summary=Apply a Gesso theme
+# gesso:args=<name>
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso theme set <name>\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+if (($# == 0)); then
+  usage >&2
+  exit 1
+fi
+
+if [[ -z ${GESSO_PATH:-} ]]; then
+  printf 'GESSO_PATH is not set\n' >&2
+  exit 1
+fi
+
+name=$1
+if [[ ! -f $GESSO_PATH/themes/$name/colors.toml && ! -f $HOME/.config/gesso/themes/$name/colors.toml ]]; then
+  printf 'Unknown theme: %s\n' "$name" >&2
+  exit 1
+fi
+
+printf 'theme set is not implemented\n' >&2
+exit 1
