@@ -9,8 +9,8 @@ Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read 
 1. Product brief: `plans/2026-08-26-product.md`
 2. This file
 3. `docs/layout.md`, `docs/cli.md`, `docs/theming.md`, `docs/testing.md`
-4. Implement phase 1 from `plans/2026-08-26-phase-1.md`
-5. Do not start phase 2 until `./test/all` is green
+4. Phase 1 is done (`plans/2026-08-26-phase-1.md`)
+5. Do not write the phase 2 plan until `./test/all` is green on this tree
 
 Omarchy (`~/source/omarchy`) is a behavior reference. Steal ideas. Do not copy trees, names, Hyprland, or Quickshell.
 
