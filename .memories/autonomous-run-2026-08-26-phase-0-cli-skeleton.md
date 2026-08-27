@@ -1,9 +1,9 @@
 # Autonomous Execution Report - Phase 0 CLI skeleton
 
-**Status:** Partial
+**Status:** Complete
 **Plan:** plans/2026-08-26-phase-0.md
 **Branch:** phase-0-cli-skeleton
-**PR:** not created (blocked)
+**PR:** https://github.com/anortham/gesso/pull/1
 **Duration:** about 25 minutes
 **Phases:** 1/1 complete
 **Tasks:** 4/4 complete
@@ -43,8 +43,7 @@ External review: none (not requested for this run).
 | branch-gate | `./test/all` prints `PASS test/cli` and exits 0; `gesso theme list` prints `tokyo-night` | `./test/all`; `./bin/gesso theme list` | da87e33 | PASS | 2026-08-27T00:58:24Z |
 
 ## Blockers hit
-- No git remote. Cannot push or open a PR.
-- User rule forbids push without explicit approval.
+- None remaining. Origin is `https://github.com/anortham/gesso.git`. PR opened.
 
 ## Files changed
 ```
@@ -60,6 +59,5 @@ External review: none (not requested for this run).
 Counts above are from `main..HEAD` before this report commit.
 
 ## Next steps
-- Add a remote if you want a PR.
-- Say if I should push.
-- Do not start phase 1 until this tree stays green. Phase 1 is a new plan: template render plus Plasma scheme.
+- Review PR: https://github.com/anortham/gesso/pull/1
+- Do not start phase 1 until this is green on `main`. Phase 1 is a new plan: template render plus Plasma scheme.
