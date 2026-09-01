@@ -46,7 +46,8 @@ if [[ -n $packages ]]; then
 fi
 
 if [[ -n $app_flatpak ]]; then
-  if elevate flatpak install -y flathub "$app_flatpak"; then
+  flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  if flatpak install --user -y flathub "$app_flatpak"; then
     if gesso-app-present "$id"; then
       exit 0
     fi
