@@ -68,7 +68,7 @@ void GessoCli::runBinaryAsync(const QString &program, const QStringList &args)
 
   auto *process = new QProcess(this);
   m_process = process;
-  emit busyChanged();
+  Q_EMIT busyChanged();
 
   QObject::connect(process, &QProcess::finished, this,
     [this, process](int exitCode, QProcess::ExitStatus status) {
@@ -79,8 +79,8 @@ void GessoCli::runBinaryAsync(const QString &program, const QStringList &args)
       const QString err = QString::fromUtf8(process->readAllStandardError());
       m_process = nullptr;
       process->deleteLater();
-      emit finished(makeResult(code, out, err));
-      emit busyChanged();
+      Q_EMIT finished(makeResult(code, out, err));
+      Q_EMIT busyChanged();
     });
 
   QObject::connect(process, &QProcess::errorOccurred, this,
@@ -92,8 +92,8 @@ void GessoCli::runBinaryAsync(const QString &program, const QStringList &args)
       const QString err = process->errorString();
       m_process = nullptr;
       process->deleteLater();
-      emit finished(makeResult(127, QString(), err));
-      emit busyChanged();
+      Q_EMIT finished(makeResult(127, QString(), err));
+      Q_EMIT busyChanged();
     });
 
   process->start(program, args);
