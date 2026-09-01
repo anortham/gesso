@@ -17,6 +17,12 @@ else
 fi
 pass "gesso theme set --help exits 0"
 
+listed=$(gesso theme list)
+for want in catppuccin-latte catppuccin-mocha gruvbox-dark nord tokyo-night; do
+  [[ $listed == *"$want"* ]] || fail "theme list prints $want" "$listed"
+done
+pass "theme list prints the five first-party themes"
+
 if gesso theme set not-a-theme >/tmp/gesso-theme-set-unknown 2>&1; then
   fail "unknown theme exits non-zero"
 fi
@@ -191,3 +197,119 @@ settings=$(cat "$HOME/.config/Code/User/settings.json")
 [[ $settings == *"editor.fontSize"* ]] || fail "JSONC settings.json keeps unrelated key" "$settings"
 [[ $settings == *"#1a1b26"* ]] || fail "JSONC settings.json merged editor.background" "$settings"
 pass "JSONC settings.json with comment and trailing comma still merges"
+
+printf '%s\n' '{' '  // comment' '  "editor.fontSize": 14,' '  "workbench.colorCustomizations": {"editor.background": "#1a1b26"}' '}' >"$HOME/.config/Code/User/settings.json"
+gesso theme restore
+settings=$(cat "$HOME/.config/Code/User/settings.json")
+[[ $settings == *"editor.fontSize"* ]] || fail "JSONC restore keeps unrelated key" "$settings"
+[[ $settings == *"#111111"* ]] || fail "JSONC restore puts previous colorCustomizations back" "$settings"
+[[ $settings == *"#1a1b26"* ]] && fail "JSONC restore removes Gesso editor.background" "$settings"
+pass "JSONC settings.json after set still restores"
+
+current=$(gesso theme current)
+[[ $current == "unset" ]] || fail "theme current prints unset after restore" "$current"
+pass "theme current prints unset after restore"
+
+flatpak_user=$HOME/.var/app/com.visualstudio.code/config/Code/User
+flatpak_backup=$HOME/.local/state/gesso/vscode-flatpak-colorCustomizations.json
+mkdir -p "$flatpak_user"
+printf '%s\n' '{"editor.fontSize": 12, "workbench.colorCustomizations": {"editor.background": "#222222"}}' >"$flatpak_user/settings.json"
+gesso theme set tokyo-night
+[[ -f $flatpak_user/gesso-theme.json ]] || fail "Flatpak VS Code gesso-theme.json when User dir exists"
+settings=$(cat "$flatpak_user/settings.json")
+[[ $settings == *"editor.fontSize"* ]] || fail "Flatpak settings.json keeps unrelated key" "$settings"
+[[ $settings == *"#1a1b26"* ]] || fail "Flatpak settings.json merged editor.background" "$settings"
+[[ -f $flatpak_backup ]] || fail "Flatpak VS Code colorCustomizations backup exists"
+backup=$(cat "$flatpak_backup")
+[[ $backup == *"#222222"* ]] || fail "Flatpak backup stores previous colorCustomizations" "$backup"
+backup=$(cat "$HOME/.local/state/gesso/vscode-colorCustomizations.json")
+[[ $backup == *"#111111"* ]] || fail "host backup stays separate from Flatpak backup" "$backup"
+gesso theme restore
+settings=$(cat "$flatpak_user/settings.json")
+[[ $settings == *"#222222"* ]] || fail "Flatpak restore puts previous colorCustomizations back" "$settings"
+[[ $settings == *"#1a1b26"* ]] && fail "Flatpak restore removes Gesso editor.background" "$settings"
+[[ -f $flatpak_backup ]] && fail "restore consumes Flatpak VS Code backup"
+settings=$(cat "$HOME/.config/Code/User/settings.json")
+[[ $settings == *"#111111"* ]] || fail "host restore puts previous colorCustomizations back" "$settings"
+pass "Flatpak VS Code merges and restores with its own backup"
+
+konsole_backup=$HOME/.local/state/gesso/konsole-default-profile
+[[ -f $konsole_backup ]] && fail "restore consumes Konsole DefaultProfile backup"
+printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Konsole.profile' >"$HOME/.config/konsolerc"
+gesso theme set tokyo-night
+[[ -f $konsole_backup ]] || fail "Konsole DefaultProfile backup exists"
+prev_profile=$(cat "$konsole_backup")
+[[ $prev_profile == "Konsole.profile" ]] || fail "Konsole backup stores previous DefaultProfile" "$prev_profile"
+krc=$(cat "$HOME/.config/konsolerc")
+[[ $krc == *DefaultProfile=Gesso.profile* ]] || fail "konsolerc DefaultProfile is Gesso.profile" "$krc"
+gesso theme set tokyo-night
+prev_profile=$(cat "$konsole_backup")
+[[ $prev_profile == "Konsole.profile" ]] || fail "second apply keeps Konsole backup" "$prev_profile"
+gesso theme restore
+krc=$(cat "$HOME/.config/konsolerc")
+[[ $krc == *DefaultProfile=Konsole.profile* ]] || fail "restore puts DefaultProfile=Konsole.profile back" "$krc"
+[[ $krc == *Gesso.profile* ]] && fail "restore removes Gesso.profile from konsolerc" "$krc"
+[[ -f $konsole_backup ]] && fail "restore deletes Konsole DefaultProfile backup"
+pass "konsolerc DefaultProfile comes back after restore"
+
+printf '%s\n' '[Desktop Entry]' >"$HOME/.config/konsolerc"
+gesso theme set tokyo-night
+gesso theme restore
+krc=$(cat "$HOME/.config/konsolerc")
+[[ $krc == *DefaultProfile=* ]] && fail "restore deletes DefaultProfile line when backup is empty" "$krc"
+pass "restore deletes DefaultProfile line when backup is empty"
+
+unset GESSO_THEME_HEADLESS
+rm -f "$HOME/gesso-stub.log"
+gtk_backup=$HOME/.local/state/gesso/gtk-color-scheme
+gesso theme set catppuccin-latte
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"gsettings set org.gnome.desktop.interface color-scheme prefer-light"* ]] || fail "catppuccin-latte logs prefer-light" "$stub"
+[[ -f $gtk_backup ]] || fail "GTK color-scheme backup exists"
+gesso theme restore
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-colorscheme Breeze"$'\n'* ]] || fail "restore after light theme logs Breeze" "$stub"
+[[ $stub == *"gsettings reset org.gnome.desktop.interface color-scheme"* ]] || fail "restore resets GTK color-scheme when backup is empty" "$stub"
+[[ -f $gtk_backup ]] && fail "restore deletes GTK color-scheme backup"
+current=$(gesso theme current)
+[[ $current == "unset" ]] || fail "theme current prints unset after non-headless restore" "$current"
+pass "catppuccin-latte sets prefer-light and restore applies Breeze"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night
+printf '%s\n' "'default'" >"$gtk_backup"
+gesso theme restore
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"gsettings set org.gnome.desktop.interface color-scheme 'default'"* ]] || fail "restore sets GTK color-scheme from backup" "$stub"
+pass "restore sets GTK color-scheme from a non-empty backup"
+
+printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$(basename "$0") $*" >>"$HOME/gesso-stub.log"' 'exit 0' >"$HOME/gesso-stubs/plasma-apply-wallpaperimage"
+chmod +x "$HOME/gesso-stubs/plasma-apply-wallpaperimage"
+mkdir -p "$HOME/.config/gesso/themes/wall-night/backgrounds"
+cp "$ROOT/themes/tokyo-night/colors.toml" "$HOME/.config/gesso/themes/wall-night/colors.toml"
+touch "$HOME/.config/gesso/themes/wall-night/backgrounds/b.png" "$HOME/.config/gesso/themes/wall-night/backgrounds/a.png"
+rm -f "$HOME/gesso-stub.log"
+gesso theme set wall-night
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/current/theme/backgrounds/a.png"* ]] || fail "wallpaper applies first sorted background" "$stub"
+pass "theme with backgrounds applies the first wallpaper"
+
+export GESSO_THEME_HEADLESS=1
+rm -f "$HOME/gesso-stub.log"
+gesso theme set wall-night
+[[ -f $HOME/gesso-stub.log ]] && fail "headless apply skips wallpaper" "$(cat "$HOME/gesso-stub.log")"
+pass "headless apply skips wallpaper"
+
+mkdir -p "$HOME/.config/ghostty" "$HOME/.config/foot"
+gesso theme set tokyo-night
+[[ -f $HOME/.config/ghostty/themes/Gesso ]] || fail "Ghostty theme file copied when config dir exists"
+ghostty=$(cat "$HOME/.config/ghostty/themes/Gesso")
+[[ $ghostty == *"background = #1a1b26"* ]] || fail "Ghostty background" "$ghostty"
+[[ $ghostty == *"palette = 15=#c0caf5"* ]] || fail "Ghostty palette 15" "$ghostty"
+[[ -f $HOME/.config/foot/gesso-theme.ini ]] || fail "Foot theme file copied when config dir exists"
+foot=$(cat "$HOME/.config/foot/gesso-theme.ini")
+[[ $foot == *"[colors]"* ]] || fail "Foot colors section" "$foot"
+[[ $foot == *$'\n'"background=1a1b26"$'\n'* ]] || fail "Foot background without hash" "$foot"
+[[ $foot == *"selection-background=292e42"* ]] || fail "Foot derived selection-background strip" "$foot"
+[[ $foot == *"bright7=c0caf5"* ]] || fail "Foot bright7" "$foot"
+pass "Ghostty and Foot theme files render"
