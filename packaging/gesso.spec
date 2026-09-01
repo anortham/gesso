@@ -12,11 +12,13 @@ BuildRequires: gcc-c++
 BuildRequires: kf6-kirigami-devel
 BuildRequires: qt6-qtbase-devel
 BuildRequires: qt6-qtdeclarative-devel
-BuildRequires: qt6-qtquickcontrols2-devel
 
 Requires: bash
 Requires: python3
+Requires: xdg-utils
 Recommends: plasma-workspace
+Recommends: libnotify
+Recommends: flatpak
 
 %description
 Gesso is a Fedora KDE add-on. It ships one palette, install-then-set-default
@@ -27,20 +29,11 @@ Summary: Kirigami Setup app for Gesso
 Requires: gesso
 Requires: kf6-kirigami
 Requires: qt6-qtdeclarative
-Recommends: gesso-agents
+Requires: kf6-qqc2-desktop-style
 
 %description plasma
 Kirigami Gesso Setup. Install this package for the desktop entry and GUI.
 It requires the gesso CLI.
-
-%package agents
-Summary: Coding-agent extras for Gesso
-Requires: gesso
-Requires: mise
-
-%description agents
-Metapackage that pulls mise for Gesso coding agents. Agent commands stay
-in the main gesso package.
 
 %prep
 %autosetup -n %{name}-%{version}
@@ -76,9 +69,6 @@ install -p -m 0644 setup/org.gesso.setup.desktop %{buildroot}%{_datadir}/applica
 %files plasma
 %{_libexecdir}/gesso/gesso-setup
 %{_datadir}/applications/org.gesso.setup.desktop
-
-%files agents
-%license LICENSE
 
 %changelog
 * Thu Aug 27 2026 Alan Northam <anortham@gmail.com> - 0.1.0-1

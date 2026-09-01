@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  cli:
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:44
+    steps:
+      - run: dnf install -y bash python3 util-linux git
+      - uses: actions/checkout@v4
+      - run: ./test/all
+
+  setup:
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:44
+    steps:
+      - run: dnf install -y cmake extra-cmake-modules gcc-c++ kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel
+      - uses: actions/checkout@v4
+      - run: cmake -S setup -B build
+      - run: cmake --build build

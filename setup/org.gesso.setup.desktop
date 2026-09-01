@@ -1,6 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Gesso Setup
+Icon=preferences-desktop-theme
 Exec=gesso setup
 Terminal=false
 Categories=Settings;DesktopSettings;
