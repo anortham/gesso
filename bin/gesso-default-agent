@@ -1,7 +1,6 @@
 #!/bin/bash
 # gesso:summary=Set or print the default coding agent
 # gesso:args=[id]
-# gesso:requires-sudo=true
 
 set -euo pipefail
 
@@ -40,33 +39,38 @@ launch=$(gesso-agent-get "$id" launch)
 label=$(gesso-agent-get "$id" label)
 launch_bin=${launch%% *}
 
-elevate() {
-  if ((EUID == 0)); then
-    "$@"
-  elif [[ -t 0 ]]; then
-    sudo "$@"
+find_mise() {
+  if command -v mise; then
+    return 0
+  elif [[ -x $HOME/.local/bin/mise ]]; then
+    printf '%s\n' "$HOME/.local/bin/mise"
+    return 0
   else
-    pkexec "$@"
+    return 1
   fi
 }
 
-if ! command -v mise >/dev/null; then
-  if ! elevate dnf install -y mise; then
+if mise=$(find_mise); then
+  :
+else
+  if ! curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh; then
     printf 'Could not install mise\n' >&2
     exit 1
   fi
-  if ! command -v mise >/dev/null; then
+  if mise=$(find_mise); then
+    :
+  else
     printf 'Could not install mise\n' >&2
     exit 1
   fi
 fi
 
-if ! mise which "$launch_bin" >/dev/null 2>&1; then
-  if ! mise use -g "$spec"; then
+if ! "$mise" which "$launch_bin" >/dev/null 2>&1; then
+  if ! "$mise" use -g "$spec"; then
     printf 'Could not install %s with mise\n' "$label" >&2
     exit 1
   fi
-  if ! mise which "$launch_bin" >/dev/null 2>&1; then
+  if ! "$mise" which "$launch_bin" >/dev/null 2>&1; then
     printf 'Could not install %s with mise\n' "$label" >&2
     exit 1
   fi

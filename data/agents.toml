@@ -1,7 +1,7 @@
 [[agent]]
 id = "grok"
 label = "Grok"
-mise = "npm:@xai-official/grok"
+mise = "grok"
 launch = ["grok", "--permission-mode", "bypassPermissions"]
 prompt_flag = "--"
 
