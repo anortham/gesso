@@ -41,13 +41,13 @@ The file lives at `$GESSO_PATH/data/agents.toml`. `gesso default agent` and `ges
 [[agent]]
 id = "grok"
 label = "Grok"
-mise = "npm:@xai-official/grok"
+mise = "grok"
 launch = ["grok", "--permission-mode", "bypassPermissions"]
 prompt_flag = "--"
 ```
 
 - No agent is default until the user runs `gesso default agent <id>`.
-- If `mise` is missing, `gesso default agent` installs it with `dnf install -y mise`.
+- If `mise` is missing from `PATH` and `~/.local/bin/mise`, `gesso default agent` installs it per user with `curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh`. No `dnf`, `sudo`, or `pkexec`.
 - If `mise which <launch_bin>` fails, install is `mise use -g <mise>`. Recheck `mise which`. Write the default file only after that check succeeds.
 - Launch is `mise exec -- <launch...>` when `mise` is on PATH. Else the host binary.
 - Launch cwd: if `$PWD` is `$HOME` and `$HOME/Work` exists, `cd` there (agents refuse to trust `$HOME`).
