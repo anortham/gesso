@@ -17,22 +17,6 @@ Kirigami.ScrollablePage {
 
   Component.onCompleted: loadAgents()
 
-  // Hidden helpers are not routed as `gesso agent-get`.
-  // gessoCli.run(["default", "agent", id]) vs
-  // gessoCli.runBinary("gesso-agent-get", ["--list"])
-
-  function stdoutLines(text) {
-    var lines = []
-    var raw = text.split("\n")
-    var i
-    for (i = 0; i < raw.length; i++) {
-      var line = raw[i].trim()
-      if (line.length > 0)
-        lines.push(line)
-    }
-    return lines
-  }
-
   function recordError(result) {
     if (result.exitCode == 0)
       return false
@@ -41,32 +25,29 @@ Kirigami.ScrollablePage {
     return true
   }
 
-  function loadAgent(id) {
-    var agent = {
-      id: id,
-      label: id
+  function parseRows(result) {
+    if (recordError(result))
+      return []
+    try {
+      return JSON.parse(result.stdout)
+    } catch (e) {
+      if (errorText.length === 0)
+        errorText = "Could not read the agent catalog."
+      return []
     }
-
-    var labelResult = gessoCli.runBinary("gesso-agent-get", [id, "label"])
-    if (!recordError(labelResult)) {
-      var label = labelResult.stdout.trim()
-      if (label.length > 0)
-        agent.label = label
-    }
-
-    return agent
   }
 
   function loadAgents() {
     errorText = ""
     var next = []
 
-    var idsResult = gessoCli.runBinary("gesso-agent-get", ["--list"])
-    if (!recordError(idsResult)) {
-      var ids = stdoutLines(idsResult.stdout)
-      var i
-      for (i = 0; i < ids.length; i++)
-        next.push(loadAgent(ids[i]))
+    var rows = parseRows(gessoCli.runBinary("gesso-agent-get", ["--json"]))
+    var i
+    for (i = 0; i < rows.length; i++) {
+      next.push({
+        id: rows[i].id,
+        label: rows[i].label ? rows[i].label : rows[i].id
+      })
     }
 
     var currentResult = gessoCli.run(["default", "agent"])
@@ -101,13 +82,13 @@ Kirigami.ScrollablePage {
   }
 
   function launchAgent() {
-    if (page.busy || gessoCli.busy)
+    if (page.busy || gessoCli.busy || current === "unset")
       return
     errorText = ""
     bannerText = ""
     var presentResult = gessoCli.runBinary("gesso-app-present", ["konsole"])
     if (presentResult.exitCode == 0) {
-      if (!gessoCli.startDetached("konsole", ["-e", "gesso", "agent"]))
+      if (!gessoCli.startDetached("konsole", ["--hold", "-e", "gesso", "agent"]))
         errorText = "Failed to start Konsole."
       return
     }
@@ -146,7 +127,7 @@ Kirigami.ScrollablePage {
 
     Controls.Label {
       Layout.fillWidth: true
-      text: page.current
+      text: "Current: " + page.current
     }
 
     Repeater {
@@ -164,7 +145,7 @@ Kirigami.ScrollablePage {
 
       Controls.Button {
         text: "Launch"
-        enabled: !page.busy && !gessoCli.busy
+        enabled: page.current !== "unset" && !page.busy && !gessoCli.busy
         onClicked: page.launchAgent()
       }
 

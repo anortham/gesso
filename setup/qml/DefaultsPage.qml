@@ -14,10 +14,6 @@ Kirigami.ScrollablePage {
 
   Component.onCompleted: loadGroups()
 
-  // Hidden helpers are not routed as `gesso catalog-get`.
-  // gessoCli.run(["default", "browser", id]) vs
-  // gessoCli.runBinary("gesso-catalog-get", ["--kind", "browser"])
-
   function stdoutLines(text) {
     var lines = []
     var raw = text.split("\n")
@@ -36,6 +32,18 @@ Kirigami.ScrollablePage {
     if (errorText.length === 0)
       errorText = result.stderr
     return true
+  }
+
+  function parseRows(result) {
+    if (recordError(result))
+      return []
+    try {
+      return JSON.parse(result.stdout)
+    } catch (e) {
+      if (errorText.length === 0)
+        errorText = "Could not read the app catalog."
+      return []
+    }
   }
 
   function loadGroups() {
@@ -61,12 +69,16 @@ Kirigami.ScrollablePage {
       apps: []
     }
 
-    var idsResult = gessoCli.runBinary("gesso-catalog-get", ["--kind", kind])
-    if (!recordError(idsResult)) {
-      var ids = stdoutLines(idsResult.stdout)
-      var i
-      for (i = 0; i < ids.length; i++)
-        group.apps.push(loadApp(ids[i]))
+    var rows = parseRows(gessoCli.runBinary("gesso-catalog-get", ["--json", "--kind", kind]))
+    var presentResult = gessoCli.runBinary("gesso-app-present", ["--list", "--kind", kind])
+    var present = recordError(presentResult) ? [] : stdoutLines(presentResult.stdout)
+    var i
+    for (i = 0; i < rows.length; i++) {
+      group.apps.push({
+        id: rows[i].id,
+        label: rows[i].label ? rows[i].label : rows[i].id,
+        present: present.indexOf(rows[i].id) >= 0
+      })
     }
 
     var currentResult = gessoCli.run(["default", kind])
@@ -86,26 +98,6 @@ Kirigami.ScrollablePage {
     group.selected = selected
 
     return group
-  }
-
-  function loadApp(id) {
-    var app = {
-      id: id,
-      label: id,
-      present: false
-    }
-
-    var labelResult = gessoCli.runBinary("gesso-catalog-get", [id, "label"])
-    if (!recordError(labelResult)) {
-      var label = labelResult.stdout.trim()
-      if (label.length > 0)
-        app.label = label
-    }
-
-    var presentResult = gessoCli.runBinary("gesso-app-present", [id])
-    app.present = presentResult.exitCode == 0
-
-    return app
   }
 
   function selectApp(kind, id) {
@@ -181,7 +173,7 @@ Kirigami.ScrollablePage {
 
         Controls.Label {
           Layout.fillWidth: true
-          text: groupBox.group.current
+          text: "Current: " + groupBox.group.current
         }
 
         Repeater {

@@ -44,31 +44,32 @@ Kirigami.ApplicationWindow {
     ]
   }
 
-  Component {
-    id: themePage
+  Item {
+    id: pageHolder
+    visible: false
+
     ThemePage {
+      id: themePage
     }
-  }
 
-  Component {
-    id: defaultsPage
     DefaultsPage {
+      id: defaultsPage
     }
-  }
 
-  Component {
-    id: agentsPage
     AgentsPage {
+      id: agentsPage
     }
-  }
 
-  Component {
-    id: installPage
     InstallPage {
+      id: installPage
     }
   }
 
   function showPage(index, page) {
+    if (pageStack.currentItem === page) {
+      currentPage = index
+      return
+    }
     currentPage = index
     pageStack.replace(page)
   }
