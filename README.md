@@ -10,7 +10,7 @@ dnf install gesso-plasma
 gesso setup
 ```
 
-`<owner>` is a placeholder until the COPR exists. Do not invent a COPR user. If Gesso is the active scheme, run `gesso theme restore` before `dnf remove`.
+`<owner>` is a placeholder until the COPR exists. Do not invent a COPR user. Two RPMs ship: `gesso` (CLI, themes, templates, catalogs) and `gesso-plasma` (the Setup app). `dnf install gesso-plasma` pulls both. Five themes ship: `tokyo-night`, `catppuccin-mocha`, `catppuccin-latte` (light), `gruvbox-dark`, and `nord`. Coding agents install per user with `mise`; there is no agents RPM. If Gesso is the active scheme, run `gesso theme restore` before `dnf remove`.
 
 ## New session
 

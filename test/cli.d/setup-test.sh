@@ -32,9 +32,10 @@ pass "missing setup binary exits non-zero"
 pass "setup skeleton files exist"
 
 [[ -f $ROOT/setup/qml/ThemePage.qml ]] || fail "ThemePage.qml exists"
-grep -q 'theme list' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme list"
-grep -q 'theme set' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme set"
-pass "ThemePage wires list and set"
+grep -Fq '"theme", "list"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme list"
+grep -Fq '"theme", "set"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme set"
+grep -q 'runAsync' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage apply uses runAsync"
+pass "ThemePage wires list and async set"
 
 [[ -f $ROOT/setup/qml/DefaultsPage.qml ]] || fail "DefaultsPage.qml exists"
 grep -q 'catalog-get' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage uses catalog-get"
@@ -73,3 +74,30 @@ pass "Launch Agent detaches Konsole"
 grep -q 'runAsync' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage apply uses runAsync"
 grep -q 'runAsync' "$ROOT/setup/qml/InstallPage.qml" || fail "InstallPage install uses runAsync"
 pass "Defaults and Install apply asynchronously"
+
+grep -Fq '"--json"' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage loads rows with --json"
+grep -Fq '"--list"' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage loads presence with --list"
+grep -Fq '"--json"' "$ROOT/setup/qml/InstallPage.qml" || fail "InstallPage loads rows with --json"
+grep -Fq '"--list"' "$ROOT/setup/qml/InstallPage.qml" || fail "InstallPage loads presence with --list"
+grep -Fq '"--json"' "$ROOT/setup/qml/AgentsPage.qml" || fail "AgentsPage loads rows with --json"
+pass "pages load rows and presence with list commands"
+
+if grep -RFq '[id, "label"]' "$ROOT/setup/qml"; then
+  fail "no page reads labels one id at a time"
+fi
+pass "no page reads labels one id at a time"
+
+grep -Fq '"--hold"' "$ROOT/setup/qml/AgentsPage.qml" || fail "Launch Agent keeps Konsole open with --hold"
+grep -Fq 'page.current !== "unset"' "$ROOT/setup/qml/AgentsPage.qml" || fail "Launch is disabled without a default agent"
+pass "Launch Agent holds Konsole and needs a default"
+
+if grep -Fq 'Component {' "$ROOT/setup/qml/Main.qml"; then
+  fail "Main.qml instantiates pages once"
+fi
+grep -Fq 'pageStack.replace(' "$ROOT/setup/qml/Main.qml" || fail "Main.qml replaces pages on the stack"
+pass "Main.qml instantiates pages once"
+
+grep -Fq '"Current: " + page.currentTheme' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage labels the current theme"
+grep -Fq '"Current: " + groupBox.group.current' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage labels the current default"
+grep -Fq '"Current: " + page.current' "$ROOT/setup/qml/AgentsPage.qml" || fail "AgentsPage labels the current agent"
+pass "current-value labels read Current:"

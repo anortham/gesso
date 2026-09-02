@@ -1,0 +1,179 @@
+#!/bin/bash
+# gesso:summary=Merge or restore VS Code workbench.colorCustomizations
+# gesso:hidden=true
+# gesso:args=merge <theme.json> <settings.json> <backup> <staged>|restore <settings.json> <backup>
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: gesso-vscode-colors merge <theme.json> <settings.json> <backup> <staged>\n'
+  printf '       gesso-vscode-colors restore <settings.json> <backup>\n'
+}
+
+case ${1:-} in
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  merge)
+    if (($# != 5)); then
+      usage >&2
+      exit 1
+    fi
+    ;;
+  restore)
+    if (($# != 3)); then
+      usage >&2
+      exit 1
+    fi
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac
+
+exec python3 - "$@" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+
+def strip_jsonc(text):
+    without_comments = []
+    i = 0
+    n = len(text)
+    in_string = False
+    escape = False
+    while i < n:
+        ch = text[i]
+        if in_string:
+            without_comments.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            without_comments.append(ch)
+            i += 1
+            continue
+        if ch == "/" and i + 1 < n:
+            nxt = text[i + 1]
+            if nxt == "/":
+                i += 2
+                while i < n and text[i] not in "\n\r":
+                    i += 1
+                continue
+            if nxt == "*":
+                i += 2
+                while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                    i += 1
+                i = min(i + 2, n)
+                continue
+        without_comments.append(ch)
+        i += 1
+    stripped = "".join(without_comments)
+    out = []
+    i = 0
+    n = len(stripped)
+    in_string = False
+    escape = False
+    while i < n:
+        ch = stripped[i]
+        if in_string:
+            out.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == ",":
+            j = i + 1
+            while j < n and stripped[j] in " \t\r\n":
+                j += 1
+            if j < n and stripped[j] in "}]":
+                i += 1
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def load_jsonc(text):
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return json.loads(strip_jsonc(text))
+
+
+def fail(message):
+    sys.stderr.write(message + "\n")
+    sys.exit(1)
+
+
+def load_settings(settings_path):
+    if not settings_path.exists():
+        return {}
+    try:
+        settings = load_jsonc(settings_path.read_text())
+    except json.JSONDecodeError:
+        fail("invalid settings.json")
+    if not isinstance(settings, dict):
+        fail("invalid settings.json")
+    return settings
+
+
+def merge(theme_path, settings_path, backup_path, staged_path):
+    try:
+        theme = json.loads(theme_path.read_text())
+    except json.JSONDecodeError:
+        fail("invalid gesso-theme.json")
+    colors = theme.get("colors")
+    if not isinstance(colors, dict):
+        fail("gesso-theme.json missing colors")
+    settings = load_settings(settings_path)
+    if not backup_path.exists():
+        prev = settings.get("workbench.colorCustomizations", None)
+        backup_path.parent.mkdir(parents=True, exist_ok=True)
+        backup_path.write_text(json.dumps(prev) + "\n")
+    settings["workbench.colorCustomizations"] = colors
+    staged_path.write_text(json.dumps(settings, indent=2) + "\n")
+
+
+def restore(settings_path, backup_path):
+    try:
+        prev = json.loads(backup_path.read_text())
+    except json.JSONDecodeError:
+        fail("invalid " + backup_path.name)
+    settings = load_settings(settings_path)
+    if prev is None:
+        settings.pop("workbench.colorCustomizations", None)
+    else:
+        settings["workbench.colorCustomizations"] = prev
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = settings_path.with_name(settings_path.name + ".tmp")
+    tmp.write_text(json.dumps(settings, indent=2) + "\n")
+    tmp.replace(settings_path)
+    backup_path.unlink()
+
+
+command = sys.argv[1]
+paths = [Path(arg) for arg in sys.argv[2:]]
+if command == "merge":
+    merge(*paths)
+else:
+    restore(*paths)
+PY

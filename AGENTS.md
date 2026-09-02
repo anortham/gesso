@@ -2,7 +2,7 @@
 
 A Fedora KDE add-on. One palette, install-then-set-default, and a coding-agent picker. Not a distro. Not Hyprland.
 
-Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. Phase 5 is done. v1 is complete aside from COPR publish.
+Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. Phase 5 is done. The v1 gaps closed on 2026-09-01 (`plans/2026-09-01-v1-gaps.md`). COPR publish remains.
 
 ## Start here (new session)
 
@@ -10,7 +10,7 @@ Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read 
 2. This file
 3. `docs/layout.md`, `docs/cli.md`, `docs/catalog.md`, `docs/theming.md`, `docs/testing.md`, `docs/packaging.md`
 4. Phase 5 is done (`plans/2026-08-27-phase-5.md`)
-5. v1 is complete aside from COPR publish
+5. The v1 gaps closed on 2026-09-01 (`plans/2026-09-01-v1-gaps.md`). COPR publish remains.
 
 Omarchy (`~/source/omarchy`) is a behavior reference. Steal ideas. Do not copy trees, names, Hyprland, or Quickshell.
 
@@ -44,6 +44,7 @@ Metadata lives in the first 80 comment lines of each `bin/gesso-*` file:
 - User overlays: `~/.config/gesso/`
 - Generated state: `~/.local/state/gesso/`
 - Runtime Plasma/Konsole/app files Gesso writes: `~/.local/share/` (so Kinoite/Aurora can use the same code)
+- `~/.local/bin/mise` is the one write outside `~/.config`, `~/.local/state`, and `~/.local/share`. `gesso default agent` installs `mise` there per user.
 - Never write to `/etc`
 
 ## Privilege
@@ -56,10 +57,10 @@ Metadata lives in the first 80 comment lines of each `bin/gesso-*` file:
 
 See [`docs/testing.md`](docs/testing.md).
 
-- `./test/cli` — router, metadata, theme list/set/restore, default apps, pkg add, setup, agent, and packaging against a fake `$HOME`
+- `./test/cli` — router, metadata, theme list/set/restore, default apps, pkg add, catalog, setup, agent, and packaging against a fake `$HOME`
 - `./test/all` — runs `./test/cli` (more suites later)
 - New command tests: `test/cli.d/<area>-test.sh`
-- No Plasma, no DBus, no `dnf` in unit tests. Stub binaries on `PATH`.
+- No Plasma, no DBus, no `dnf`, no `flatpak`, no `curl` in unit tests. Stub binaries on `PATH`.
 
 ## Hard no
 
@@ -73,6 +74,6 @@ The CLI is the API. The Kirigami Setup app (phase 3) only execs `gesso-*`. Tests
 
 **Caller-facing interface:** `gesso <group> <name> [args]` and the matching `gesso-*` binary.
 
-**Seams:** catalog TOML (`data/apps.toml`) for install/default; `colors.toml` plus templates for theming; `mise` for agents. Do not add a plugin host in v1.
+**Seams:** catalog TOML (`data/apps.toml`) for install/default; `colors.toml` plus templates for theming; per-user `mise` (`~/.local/bin/mise`, no RPM) for agents. Do not add a plugin host in v1.
 
 **Architecture risk:** medium. The trap is growing a desktop shell. Keep Gesso a command pack plus one Setup window.

@@ -23,11 +23,11 @@ flatpak = "org.mozilla.firefox"
 Rules:
 
 - `kind` decides which default command owns the row (`gesso default browser` only lists `kind = "browser"`).
-- `dnf` is tried first, in order. If every RPM is missing from Fedora/RPM Fusion and `flatpak` is set, install that Flatpak.
+- `dnf` is tried first, in order, with `sudo` or `pkexec`. If every RPM is missing from Fedora/RPM Fusion and `flatpak` is set, install that Flatpak per user with no elevation: `gesso pkg add` runs `flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`, then `flatpak install --user -y flathub <flatpak>`. The filtered system Flathub remote that stock Fedora ships is left alone.
 - `gesso-app-present <id>` is the presence check. Host first: `gesso-cmd-present` on `command`. Else `flatpak info` on `flatpak`.
 - `command` is the host binary. Helix is `hx`.
 - `desktop_id` is the host desktop file. When only Flatpak is present, defaults use `<flatpak>.desktop`.
-- Editors write `id` to `~/.local/state/gesso/defaults/editor`. The launch command is `command`.
+- `gesso default editor <id>` writes `id` to `~/.local/state/gesso/defaults/editor`, then runs `xdg-mime default <desktop> <mime>...` with the desktop id from `gesso-app-present --desktop <id>` for these types: `text/plain`, `text/markdown`, `text/x-shellscript`, `application/x-shellscript`, `text/x-python`, `application/json`, `text/xml`, `application/xml`, `text/css`, `text/javascript`, `application/toml`, `application/x-yaml`. The launch command is `command`.
 
 v1 browser ids: `firefox`, `chromium`, `chrome`, `brave`, `edge`. Terminal ids: `konsole`, `ghostty`, `kitty`, `foot`. Editor ids: `code`, `kate`, `nvim`, `helix`, `zed`.
 
@@ -41,13 +41,13 @@ The file lives at `$GESSO_PATH/data/agents.toml`. `gesso default agent` and `ges
 [[agent]]
 id = "grok"
 label = "Grok"
-mise = "npm:@xai-official/grok"
+mise = "grok"
 launch = ["grok", "--permission-mode", "bypassPermissions"]
 prompt_flag = "--"
 ```
 
 - No agent is default until the user runs `gesso default agent <id>`.
-- If `mise` is missing, `gesso default agent` installs it with `dnf install -y mise`.
+- If `mise` is missing from `PATH` and `~/.local/bin/mise`, `gesso default agent` installs it per user with `curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh`. No `dnf`, `sudo`, or `pkexec`.
 - If `mise which <launch_bin>` fails, install is `mise use -g <mise>`. Recheck `mise which`. Write the default file only after that check succeeds.
 - Launch is `mise exec -- <launch...>` when `mise` is on PATH. Else the host binary.
 - Launch cwd: if `$PWD` is `$HOME` and `$HOME/Work` exists, `cd` there (agents refuse to trust `$HOME`).
@@ -69,7 +69,7 @@ Launch flags (keep in the TOML, not in a `case`):
 For defaults and extra apps:
 
 1. If `gesso-app-present <id>` exits 0, skip install.
-2. Else run `gesso pkg add` for `dnf`, or Flatpak, as the row says.
+2. Else run `gesso pkg add` for `dnf` (elevated), or a per-user Flatpak from the user `flathub` remote (no elevation), as the row says.
 3. Then set the default (XDG or state file).
 4. Notify with `label`.
 

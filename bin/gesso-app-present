@@ -1,12 +1,49 @@
 #!/bin/bash
 # gesso:summary=Exit 0 if a catalog app is on the host or as Flatpak
 # gesso:hidden=true
-# gesso:args=[--desktop] <id>
+# gesso:args=[--desktop] <id>|--list --kind <kind>
 
 set -euo pipefail
 
-if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+usage() {
   printf 'Usage: gesso-app-present [--desktop] <id>\n'
+  printf '       gesso-app-present --list --kind <kind>\n'
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+present_flatpak=""
+
+app_present() {
+  local id=$1 app_cmd app_flatpak
+  present_flatpak=""
+  app_cmd=$(gesso-catalog-get "$id" command)
+  if [[ -n $app_cmd ]] && gesso-cmd-present "$app_cmd"; then
+    return 0
+  fi
+  app_flatpak=$(gesso-catalog-get "$id" flatpak)
+  if [[ -n $app_flatpak ]] && flatpak info "$app_flatpak" >/dev/null 2>&1; then
+    present_flatpak=$app_flatpak
+    return 0
+  fi
+  return 1
+}
+
+if [[ ${1:-} == "--list" ]]; then
+  if (($# != 3)) || [[ $2 != "--kind" ]]; then
+    usage >&2
+    exit 1
+  fi
+  kind=$3
+  mapfile -t ids < <(gesso-catalog-get --kind "$kind")
+  for id in "${ids[@]}"; do
+    if app_present "$id"; then
+      printf '%s\n' "$id"
+    fi
+  done
   exit 0
 fi
 
@@ -17,24 +54,18 @@ if [[ ${1:-} == "--desktop" ]]; then
 fi
 
 if (($# != 1)); then
-  printf 'Usage: gesso-app-present [--desktop] <id>\n' >&2
+  usage >&2
   exit 1
 fi
 
 id=$1
-app_cmd=$(gesso-catalog-get "$id" command)
-
-if [[ -n $app_cmd ]] && gesso-cmd-present "$app_cmd"; then
+if app_present "$id"; then
   if ((desktop == 1)); then
-    gesso-catalog-get "$id" desktop_id
-  fi
-  exit 0
-fi
-
-app_flatpak=$(gesso-catalog-get "$id" flatpak)
-if [[ -n $app_flatpak ]] && flatpak info "$app_flatpak" >/dev/null 2>&1; then
-  if ((desktop == 1)); then
-    printf '%s.desktop\n' "$app_flatpak"
+    if [[ -n $present_flatpak ]]; then
+      printf '%s.desktop\n' "$present_flatpak"
+    else
+      gesso-catalog-get "$id" desktop_id
+    fi
   fi
   exit 0
 fi

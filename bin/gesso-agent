@@ -47,8 +47,19 @@ if [[ -n $prompt ]]; then
   argv+=("$prompt")
 fi
 
-if command -v mise >/dev/null; then
-  argv=(mise exec -- "${argv[@]}")
+find_mise() {
+  if command -v mise; then
+    return 0
+  elif [[ -x $HOME/.local/bin/mise ]]; then
+    printf '%s\n' "$HOME/.local/bin/mise"
+    return 0
+  else
+    return 1
+  fi
+}
+
+if mise=$(find_mise); then
+  argv=("$mise" exec -- "${argv[@]}")
 else
   bin=${argv[0]}
   if ! gesso-cmd-present "$bin"; then

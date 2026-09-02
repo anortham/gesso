@@ -80,9 +80,6 @@ render_file() {
     fi
   done
   printf '%s' "$content" >"$out"
-  if [[ $content != *$'\n' ]]; then
-    :
-  fi
 }
 
 render_dir() {

@@ -1,13 +1,14 @@
 #!/bin/bash
 # gesso:summary=Read a field from the app catalog
 # gesso:hidden=true
-# gesso:args=<id> <field>|--kind <kind>
+# gesso:args=<id> <field>|--kind <kind>|--json --kind <kind>
 
 set -euo pipefail
 
 if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
   printf 'Usage: gesso-catalog-get <id> <field>\n'
   printf '       gesso-catalog-get --kind <kind>\n'
+  printf '       gesso-catalog-get --json --kind <kind>\n'
   exit 0
 fi
 
@@ -23,6 +24,7 @@ if [[ ! -f $catalog ]]; then
 fi
 
 python3 - "$catalog" "$@" <<'PY'
+import json
 import sys
 import tomllib
 from pathlib import Path
@@ -31,6 +33,11 @@ catalog = Path(sys.argv[1])
 args = sys.argv[2:]
 data = tomllib.loads(catalog.read_text())
 apps = data.get("app") or []
+
+if len(args) == 3 and args[0] == "--json" and args[1] == "--kind":
+    kind = args[2]
+    print(json.dumps([a for a in apps if a.get("kind") == kind]))
+    sys.exit(0)
 
 if len(args) == 2 and args[0] == "--kind":
     kind = args[1]

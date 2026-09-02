@@ -9,7 +9,7 @@ fi
 pass "gesso-agent-get is executable"
 
 got=$(gesso-agent-get grok mise)
-[[ $got == "npm:@xai-official/grok" ]] || fail "grok mise spec" "$got"
+[[ $got == "grok" ]] || fail "grok mise spec" "$got"
 pass "grok mise spec"
 
 launch=$(gesso-agent-get grok launch)
@@ -75,7 +75,7 @@ got=$(gesso default agent)
 [[ $got == "grok" ]] || fail "default agent grok prints grok" "$got"
 [[ -f $HOME/.config/gesso/defaults/agent ]] || fail "agent default file exists"
 log=$(cat "$HOME/gesso-stub.log")
-[[ $log == *"mise use -g npm:@xai-official/grok"* ]] || fail "mise use grok logged" "$log"
+[[ $log == *"mise use -g grok"* ]] || fail "mise use grok logged" "$log"
 if gesso-cmd-present grok; then
   fail "grok is not on PATH after default agent"
 fi
@@ -107,3 +107,30 @@ mkdir -p "$HOME/Work"
 out=$(cd "$HOME" && GESSO_AGENT_DRY_RUN=1 gesso agent)
 [[ $out == *"cwd=$HOME/Work"* ]] || fail "launch from HOME uses Work" "$out"
 pass "launch from HOME uses Work"
+
+mv "$HOME/gesso-stubs/mise" "$HOME/gesso-mise.good"
+cat >"$HOME/gesso-stubs/curl" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$(basename "$0") $*" >>"$HOME/gesso-stub.log"
+printf '%s\n' 'mkdir -p "$(dirname "$MISE_INSTALL_PATH")"' 'cp "$HOME/gesso-mise.good" "$MISE_INSTALL_PATH"' 'chmod +x "$MISE_INSTALL_PATH"'
+STUB
+chmod +x "$HOME/gesso-stubs/curl"
+printf '%s\n' '#!/bin/bash' 'exec bash "$@"' >"$HOME/gesso-stubs/sh"
+chmod +x "$HOME/gesso-stubs/sh"
+rm -f "$HOME/gesso-stub.log"
+gesso default agent grok
+[[ -x $HOME/.local/bin/mise ]] || fail "installer puts mise in .local/bin"
+log=$(cat "$HOME/gesso-stub.log")
+[[ $log == *"curl -fsSL https://mise.run"* ]] || fail "installer uses mise.run" "$log"
+[[ $log == *dnf* ]] && fail "installer does not use dnf" "$log"
+[[ $log == *sudo* ]] && fail "installer does not use sudo" "$log"
+[[ $log == *pkexec* ]] && fail "installer does not use pkexec" "$log"
+pass "default agent installs mise per user when missing"
+
+out=$(GESSO_AGENT_DRY_RUN=1 gesso agent)
+[[ $out == *"argv=$HOME/.local/bin/mise exec --"* ]] || fail "dry-run uses .local/bin/mise" "$out"
+pass "agent dry-run uses per-user mise"
+
+cp "$HOME/gesso-mise.good" "$HOME/gesso-stubs/mise"
+chmod +x "$HOME/gesso-stubs/mise"
+rm -f "$HOME/gesso-stubs/curl" "$HOME/gesso-stubs/sh"

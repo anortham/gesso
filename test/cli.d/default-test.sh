@@ -85,7 +85,10 @@ rm -f "$HOME/gesso-stubs/google-chrome"
 gesso pkg add chrome
 log=$(cat "$HOME/gesso-stub.log")
 [[ $log == *"dnf install"* ]] && fail "chrome has no dnf packages" "$log"
-[[ $log == *"flatpak install -y flathub com.google.Chrome"* ]] || fail "chrome uses flatpak" "$log"
+[[ $log == *"flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"* ]] || fail "chrome adds user flathub remote" "$log"
+[[ $log == *"flatpak install --user -y flathub com.google.Chrome"* ]] || fail "chrome uses user flatpak" "$log"
+[[ $log == *"pkexec flatpak"* ]] && fail "chrome flatpak is not elevated with pkexec" "$log"
+[[ $log == *"sudo flatpak"* ]] && fail "chrome flatpak is not elevated with sudo" "$log"
 if command -v google-chrome >/dev/null; then
   fail "chrome flatpak does not create google-chrome host binary"
 fi
@@ -151,6 +154,7 @@ cur=$(gesso default terminal)
 [[ $cur == "konsole" ]] || fail "default terminal prints konsole" "$cur"
 pass "default terminal konsole writes xdg-terminals.list"
 
+rm -f "$HOME/gesso-stub.log"
 gesso default editor kate
 ed=$HOME/.local/state/gesso/defaults/editor
 [[ -f $ed ]] || fail "editor state file exists"
@@ -160,8 +164,24 @@ cur=$(gesso default editor)
 [[ $cur == "kate" ]] || fail "default editor prints kate" "$cur"
 pass "default editor kate writes state file"
 
+log=$(cat "$HOME/gesso-stub.log")
+mime_line="xdg-mime default org.kde.kate.desktop text/plain text/markdown text/x-shellscript application/x-shellscript text/x-python application/json text/xml application/xml text/css text/javascript application/toml application/x-yaml"
+[[ $log == *"$mime_line"* ]] || fail "default editor kate sets xdg-mime for the mime list" "$log"
+pass "default editor kate sets xdg-mime defaults"
+
 gesso default editor kate
 pass "default editor kate is idempotent"
+
+rm -f "$HOME/gesso-stub.log"
+gesso pkg add code
+log=$(cat "$HOME/gesso-stub.log")
+[[ $log == *"flatpak install --user -y flathub com.visualstudio.code"* ]] || fail "code installs as user flatpak" "$log"
+gesso default editor code
+cur=$(gesso default editor)
+[[ $cur == "code" ]] || fail "default editor prints code" "$cur"
+log=$(cat "$HOME/gesso-stub.log")
+[[ $log == *"xdg-mime default com.visualstudio.code.desktop"* ]] || fail "default editor code uses the Flatpak desktop id" "$log"
+pass "default editor code sets xdg-mime with Flatpak desktop id"
 
 rm -f "$HOME/gesso-stub.log"
 rm -f "$HOME/gesso-stubs/helix" "$HOME/gesso-stubs/hx"

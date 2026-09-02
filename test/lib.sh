@@ -50,6 +50,7 @@ state=$HOME/.local/state/gesso-flatpak
 mkdir -p "$state"
 install=0
 info=0
+remote_add=0
 for arg in "$@"; do
   if [[ $arg == "install" ]]; then
     install=1
@@ -57,10 +58,16 @@ for arg in "$@"; do
   if [[ $arg == "info" ]]; then
     info=1
   fi
+  if [[ $arg == "remote-add" ]]; then
+    remote_add=1
+  fi
 done
+if ((remote_add == 1)); then
+  exit 0
+fi
 if ((install == 1)); then
   for arg in "$@"; do
-    if [[ $arg == "install" || $arg == "-y" || $arg == "flathub" ]]; then
+    if [[ $arg == "install" || $arg == "--user" || $arg == "-y" || $arg == "flathub" ]]; then
       continue
     fi
     if [[ $arg == -* ]]; then
@@ -101,6 +108,7 @@ if [[ ${1:-} == "set" && ${2:-} == "default-web-browser" ]]; then
 fi
 exit 0
 EOF
+  printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$(basename "$0") $*" >>"$HOME/gesso-stub.log"' 'exit 0' >"$stub/xdg-mime"
   cat >"$stub/mise" <<'EOF'
 #!/bin/bash
 printf '%s\n' "$(basename "$0") $*" >>"$HOME/gesso-stub.log"
@@ -139,7 +147,7 @@ exit 0
 EOF
   chmod +x "$stub/plasma-apply-colorscheme" "$stub/gsettings" "$stub/pkexec" \
     "$stub/notify-send" "$stub/sudo" "$stub/dnf" "$stub/flatpak" "$stub/xdg-settings" \
-    "$stub/mise"
+    "$stub/xdg-mime" "$stub/mise"
   sys=$HOME/gesso-sys
   mkdir -p "$sys"
   for cmd in python3 awk sed grep head cut sort cat mkdir chmod cp mv rm ln \

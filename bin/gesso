@@ -14,26 +14,40 @@ fi
 
 export PATH="$GESSO_BIN_DIR:$PATH"
 
+metadata_value() {
+  local file=$1 key=$2
+  head -n 80 "$file" | sed -n "0,/^# gesso:$key=/s/^# gesso:$key=//p"
+}
+
+command_label() {
+  local stem=${1#gesso-}
+  if [[ $stem == *-* ]]; then
+    printf '%s %s' "${stem%%-*}" "${stem#*-}" | tr '-' ' '
+  else
+    printf '%s' "$stem"
+  fi
+}
+
 usage() {
-  cat <<'EOF'
-Usage: gesso <command> [args]
-
-Commands:
-  theme list       List available themes
-  theme set        Apply a Gesso theme
-  theme current    Print the current theme name
-  theme restore    Restore Breeze if Gesso last applied a color scheme
-  default browser  Set or print the default browser
-  default terminal Set or print the default terminal
-  default editor   Set or print the default editor
-  default agent    Set or print the default coding agent
-  pkg add          Install a catalog app
-  agent            Launch the default coding agent
-  setup            Open Gesso Setup
-  commands         List commands
-
-Use gesso <command> --help for a command's usage.
-EOF
+  local cmd summary label
+  local -a rows=()
+  for cmd in "$GESSO_BIN_DIR"/gesso-*; do
+    [[ -x $cmd ]] || continue
+    if head -n 80 "$cmd" | grep -q '^# gesso:hidden=true'; then
+      continue
+    fi
+    summary=$(metadata_value "$cmd" summary)
+    if head -n 80 "$cmd" | grep -q '^# gesso:requires-sudo=true'; then
+      summary+=" (sudo)"
+    fi
+    rows+=("$(command_label "${cmd##*/}")"$'\t'"$summary")
+  done
+  printf 'Usage: gesso <command> [args]\n\nCommands:\n'
+  while IFS=$'\t' read -r label summary; do
+    printf '  %-18s %s\n' "$label" "$summary"
+  done < <(printf '%s\n' "${rows[@]+"${rows[@]}"}" | sort)
+  printf '  %-18s %s\n' commands 'List commands'
+  printf "\nUse gesso <command> --help for a command's usage.\n"
 }
 
 if (($# == 0)) || [[ $1 == "--help" || $1 == "-h" ]]; then
@@ -111,5 +125,10 @@ for arg in "${leftover[@]+"${leftover[@]}"}"; do
     exec "$GESSO_BIN_DIR/$found" --help
   fi
 done
+
+if [[ $(metadata_value "$GESSO_BIN_DIR/$found" args) == *"<"* ]] && ((${#leftover[@]} == 0)); then
+  "$GESSO_BIN_DIR/$found" --help >&2
+  exit 1
+fi
 
 exec "$GESSO_BIN_DIR/$found" "${leftover[@]+"${leftover[@]}"}"

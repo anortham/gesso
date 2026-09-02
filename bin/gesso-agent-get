@@ -1,13 +1,14 @@
 #!/bin/bash
 # gesso:summary=Read a field from the agent catalog
 # gesso:hidden=true
-# gesso:args=<id> <field>|--list
+# gesso:args=<id> <field>|--list|--json
 
 set -euo pipefail
 
 if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
   printf 'Usage: gesso-agent-get <id> <field>\n'
   printf '       gesso-agent-get --list\n'
+  printf '       gesso-agent-get --json\n'
   exit 0
 fi
 
@@ -23,6 +24,7 @@ if [[ ! -f $catalog ]]; then
 fi
 
 python3 - "$catalog" "$@" <<'PY'
+import json
 import sys
 import tomllib
 from pathlib import Path
@@ -31,6 +33,10 @@ catalog = Path(sys.argv[1])
 args = sys.argv[2:]
 data = tomllib.loads(catalog.read_text())
 agents = data.get("agent") or []
+
+if len(args) == 1 and args[0] == "--json":
+    print(json.dumps(agents))
+    sys.exit(0)
 
 if len(args) == 1 and args[0] == "--list":
     ids = [a["id"] for a in agents]

@@ -50,6 +50,23 @@ fi
 mkdir -p "$(dirname "$editor_file")"
 printf '%s\n' "$id" > "$editor_file"
 
+mime_types=(
+  text/plain
+  text/markdown
+  text/x-shellscript
+  application/x-shellscript
+  text/x-python
+  application/json
+  text/xml
+  application/xml
+  text/css
+  text/javascript
+  application/toml
+  application/x-yaml
+)
+desktop_id=$(gesso-app-present --desktop "$id")
+xdg-mime default "$desktop_id" "${mime_types[@]}"
+
 if command -v notify-send >/dev/null; then
   notify-send "$label is now the default editor"
 fi

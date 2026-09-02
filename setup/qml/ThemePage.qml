@@ -12,20 +12,14 @@ Kirigami.Page {
   property string currentTheme: ""
   property string selectedTheme: ""
   property string errorText: ""
+  property bool busy: false
 
   Component.onCompleted: loadThemes()
-
-  function runTheme(command, extra) {
-    var args = command.split(" ")
-    if (extra !== undefined)
-      args.push(extra)
-    return gessoCli.run(args)
-  }
 
   function loadThemes() {
     errorText = ""
 
-    var listResult = runTheme("theme list")
+    var listResult = gessoCli.run(["theme", "list"])
     if (listResult.exitCode != 0) {
       errorText = listResult.stderr
       themeNames = []
@@ -41,7 +35,7 @@ Kirigami.Page {
       themeNames = names
     }
 
-    var currentResult = runTheme("theme current")
+    var currentResult = gessoCli.run(["theme", "current"])
     if (currentResult.exitCode != 0) {
       if (errorText.length === 0)
         errorText = currentResult.stderr
@@ -60,18 +54,27 @@ Kirigami.Page {
   }
 
   function applySelected() {
+    if (page.busy || gessoCli.busy)
+      return
     errorText = ""
-    var result = runTheme("theme set", selectedTheme)
-    if (result.exitCode != 0) {
-      errorText = result.stderr
+    if (selectedTheme.length === 0)
       return
+
+    page.busy = true
+    gessoCli.runAsync(["theme", "set", selectedTheme])
+  }
+
+  Connections {
+    target: gessoCli
+    enabled: page.busy
+    function onFinished(result) {
+      page.busy = false
+      if (result.exitCode != 0) {
+        page.errorText = result.stderr
+        return
+      }
+      page.loadThemes()
     }
-    var currentResult = runTheme("theme current")
-    if (currentResult.exitCode != 0) {
-      errorText = currentResult.stderr
-      return
-    }
-    currentTheme = currentResult.stdout.trim()
   }
 
   ColumnLayout {
@@ -86,7 +89,7 @@ Kirigami.Page {
 
     Controls.Label {
       Layout.fillWidth: true
-      text: page.currentTheme
+      text: "Current: " + page.currentTheme
     }
 
     ListView {
@@ -106,7 +109,7 @@ Kirigami.Page {
     Controls.Button {
       Layout.alignment: Qt.AlignRight
       text: "Apply"
-      enabled: page.themeNames.length > 0
+      enabled: page.themeNames.length > 0 && !page.busy && !gessoCli.busy
       onClicked: page.applySelected()
     }
   }

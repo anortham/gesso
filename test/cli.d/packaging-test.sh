@@ -49,10 +49,24 @@ export GESSO_THEME_HEADLESS=1
 [[ -f $ROOT/packaging/gesso.spec ]] || fail "gesso.spec exists"
 spec=$(cat "$ROOT/packaging/gesso.spec")
 [[ $spec == *"%package plasma"* ]] || fail "spec has plasma subpackage"
-[[ $spec == *"%package plasma"*Recommends:\ gesso-agents*"%description plasma"* ]] || fail "plasma Recommends gesso-agents"
-[[ $spec == *"%package agents"* ]] || fail "spec has agents subpackage"
+[[ $spec == *"%package plasma"*"Requires: kf6-qqc2-desktop-style"*"%description plasma"* ]] || fail "plasma Requires kf6-qqc2-desktop-style"
+[[ $spec == *"Requires: xdg-utils"* ]] || fail "spec Requires xdg-utils"
+[[ $spec == *"%package agents"* ]] && fail "spec must not have an agents subpackage"
+[[ $spec == *"gesso-agents"* ]] && fail "spec must not mention gesso-agents"
+[[ $spec == *"qtquickcontrols2"* ]] && fail "spec must not BuildRequire qtquickcontrols2"
 [[ $spec == *"Name: gesso"* ]] || fail "spec Name is gesso"
 [[ $spec == *"Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz"* ]] || fail "spec Source0 uses v%{version}"
 [[ $spec == *"/etc/"* ]] && fail "spec must not ship /etc"
 [[ $spec == *libexec*gesso/gesso-setup* || $spec == *"%{_libexecdir}/gesso/gesso-setup"* ]] || fail "spec installs libexec gesso-setup"
-pass "spec has three packages, Source0 tag, and no /etc"
+pass "spec has two packages, Source0 tag, and no /etc"
+
+desktop=$(cat "$ROOT/setup/org.gesso.setup.desktop")
+[[ $desktop == *"Icon=preferences-desktop-theme"* ]] || fail "desktop file has Icon"
+pass "desktop file has Icon"
+
+[[ -f $ROOT/.github/workflows/ci.yml ]] || fail "ci workflow exists"
+ci=$(cat "$ROOT/.github/workflows/ci.yml")
+[[ $ci == *"registry.fedoraproject.org/fedora:44"* ]] || fail "ci runs on Fedora 44"
+[[ $ci == *"./test/all"* ]] || fail "ci runs ./test/all"
+[[ $ci == *"cmake --build build"* ]] || fail "ci builds setup"
+pass "ci workflow runs tests and cmake on Fedora 44"
