@@ -141,6 +141,16 @@ if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
   if ! command -v plasma-apply-colorscheme >/dev/null; then
     fail_publish 'plasma-apply-colorscheme is not available'
   fi
+  # Plasma refuses to re-apply a scheme that is already current, so a
+  # Gesso-to-Gesso switch would leave the previous colors on screen. Bounce
+  # through the Breeze scheme for the new mode first.
+  if plasma-apply-colorscheme -l 2>/dev/null | grep -q '^ \* Gesso ('; then
+    if [[ $mode == "light" ]]; then
+      plasma-apply-colorscheme BreezeLight || true
+    else
+      plasma-apply-colorscheme BreezeDark || true
+    fi
+  fi
   if ! plasma-apply-colorscheme Gesso; then
     fail_publish
   fi

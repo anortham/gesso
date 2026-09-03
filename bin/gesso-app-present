@@ -32,6 +32,32 @@ app_present() {
   return 1
 }
 
+host_desktop() {
+  local id=$1 candidate flatpak_id dir base
+  local -a dirs=()
+  IFS=':' read -r -a dirs <<<"${XDG_DATA_HOME:-$HOME/.local/share}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+  for base in "${!dirs[@]}"; do
+    dirs[base]=${dirs[base]}/applications
+  done
+  candidate=$(gesso-catalog-get "$id" desktop_id)
+  for dir in "${dirs[@]}"; do
+    if [[ -n $candidate && -f $dir/$candidate ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  # Fedora 44 renamed some desktop files to reverse-DNS ids (firefox.desktop
+  # became org.mozilla.firefox.desktop). Prefer the one actually installed.
+  flatpak_id=$(gesso-catalog-get "$id" flatpak)
+  for dir in "${dirs[@]}"; do
+    if [[ -n $flatpak_id && -f $dir/$flatpak_id.desktop ]]; then
+      printf '%s\n' "$flatpak_id.desktop"
+      return 0
+    fi
+  done
+  printf '%s\n' "$candidate"
+}
+
 if [[ ${1:-} == "--list" ]]; then
   if (($# != 3)) || [[ $2 != "--kind" ]]; then
     usage >&2
@@ -64,7 +90,7 @@ if app_present "$id"; then
     if [[ -n $present_flatpak ]]; then
       printf '%s.desktop\n' "$present_flatpak"
     else
-      gesso-catalog-get "$id" desktop_id
+      host_desktop "$id"
     fi
   fi
   exit 0

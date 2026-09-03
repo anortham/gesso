@@ -8,6 +8,19 @@ usage() {
   printf 'Usage: gesso default editor [id]\n'
 }
 
+# Fedora 44 ships qtpaths6 and qtpaths-qt6 but no bare qtpaths, and xdg-utils
+# calls qtpaths on a KDE session. Unsetting KDE_SESSION_VERSION trips a
+# separate xdg-utils bug, so put a qtpaths on PATH for the xdg-* calls.
+if [[ -n ${KDE_SESSION_VERSION:-} ]] && ! command -v qtpaths >/dev/null; then
+  qtpaths_real=$(command -v qtpaths6 || command -v qtpaths-qt6) || qtpaths_real=""
+  if [[ -n $qtpaths_real ]]; then
+    qtpaths_shim=$(mktemp -d)
+    trap 'rm -rf "$qtpaths_shim"' EXIT
+    ln -s "$qtpaths_real" "$qtpaths_shim/qtpaths"
+    PATH="$qtpaths_shim:$PATH"
+  fi
+fi
+
 if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
   usage
   exit 0

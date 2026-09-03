@@ -89,3 +89,16 @@ if gesso pkg add >"$HOME/gesso-bare-out" 2>"$HOME/gesso-bare-err"; then
 fi
 [[ $(<"$HOME/gesso-bare-err") == *Usage:* ]] || fail "gesso pkg add with no args prints usage" "$(<"$HOME/gesso-bare-err")"
 pass "gesso pkg add with no args prints usage and exits 1"
+
+link_dir=$HOME/gesso-link-bin
+mkdir -p "$link_dir"
+ln -sf "$ROOT/bin/gesso" "$link_dir/gesso"
+link_env=(env -u GESSO_PATH "PATH=$link_dir:$HOME/gesso-stubs:$HOME/gesso-sys")
+
+link_help=$("${link_env[@]}" gesso --help)
+grep -Eq '^  theme set ' <<<"$link_help" || fail "symlinked gesso lists commands" "$link_help"
+pass "symlinked gesso lists commands"
+
+link_list=$("${link_env[@]}" gesso theme list)
+[[ $link_list == *tokyo-night* ]] || fail "symlinked gesso resolves GESSO_PATH" "$link_list"
+pass "symlinked gesso resolves GESSO_PATH"

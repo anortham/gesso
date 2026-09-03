@@ -23,7 +23,7 @@ Do not ship `/etc` or `environment.d`. The router sets `$GESSO_PATH=/usr/share/g
 
 ## Uninstall
 
-If Gesso is the active color scheme, run `gesso theme restore` before `dnf remove gesso-plasma gesso`. Restore applies `BreezeDark` or `Breeze` from the last theme `mode`, or `BreezeDark` if unknown. RPM scriptlets do not call restore.
+If Gesso is the active color scheme, run `gesso theme restore` before `dnf remove gesso-plasma gesso`. Restore applies `BreezeDark` or `BreezeLight` from the last theme `mode`, or `BreezeDark` if unknown. RPM scriptlets do not call restore.
 
 `dnf remove gesso-plasma gesso` must leave Plasma usable.
 

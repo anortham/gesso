@@ -39,6 +39,16 @@ dnf = []
 flatpak = "com.brave.Browser"
 
 [[app]]
+id = "brave-origin"
+kind = "browser"
+label = "Brave Origin"
+glyph = "*"
+desktop_id = "brave-origin.desktop"
+command = "brave-origin"
+dnf = ["brave-origin"]
+flatpak = ""
+
+[[app]]
 id = "edge"
 kind = "browser"
 label = "Edge"

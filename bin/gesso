@@ -1,7 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-GESSO_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+GESSO_SOURCE=${BASH_SOURCE[0]}
+if [[ -L $GESSO_SOURCE ]]; then
+  GESSO_SOURCE=$(readlink -f -- "$GESSO_SOURCE")
+fi
+GESSO_BIN_DIR=$(cd -- "$(dirname -- "$GESSO_SOURCE")" && pwd)
 GESSO_ROOT=$(cd -- "$GESSO_BIN_DIR/.." && pwd)
 
 if [[ -z ${GESSO_PATH:-} ]]; then
@@ -43,9 +47,11 @@ usage() {
     rows+=("$(command_label "${cmd##*/}")"$'\t'"$summary")
   done
   printf 'Usage: gesso <command> [args]\n\nCommands:\n'
-  while IFS=$'\t' read -r label summary; do
-    printf '  %-18s %s\n' "$label" "$summary"
-  done < <(printf '%s\n' "${rows[@]+"${rows[@]}"}" | sort)
+  if ((${#rows[@]} > 0)); then
+    while IFS=$'\t' read -r label summary; do
+      printf '  %-18s %s\n' "$label" "$summary"
+    done < <(printf '%s\n' "${rows[@]}" | sort)
+  fi
   printf '  %-18s %s\n' commands 'List commands'
   printf "\nUse gesso <command> --help for a command's usage.\n"
 }

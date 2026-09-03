@@ -45,7 +45,7 @@ gesso theme restore
 dnf remove gesso-plasma gesso
 ```
 
-`gesso theme restore` applies `BreezeDark` or `Breeze` from the last theme `mode`. It does not delete `~/.config/gesso` or `~/.local/state/gesso`. RPM `%preun` and `%postun` do not call restore.
+`gesso theme restore` applies `BreezeDark` or `BreezeLight` from the last theme `mode`. It does not delete `~/.config/gesso` or `~/.local/state/gesso`. RPM `%preun` and `%postun` do not call restore.
 
 ## Tests
 

@@ -268,12 +268,12 @@ stub=$(cat "$HOME/gesso-stub.log")
 [[ -f $gtk_backup ]] || fail "GTK color-scheme backup exists"
 gesso theme restore
 stub=$(cat "$HOME/gesso-stub.log")
-[[ $stub == *"plasma-apply-colorscheme Breeze"$'\n'* ]] || fail "restore after light theme logs Breeze" "$stub"
+[[ $stub == *"plasma-apply-colorscheme BreezeLight"$'\n'* ]] || fail "restore after light theme logs BreezeLight" "$stub"
 [[ $stub == *"gsettings reset org.gnome.desktop.interface color-scheme"* ]] || fail "restore resets GTK color-scheme when backup is empty" "$stub"
 [[ -f $gtk_backup ]] && fail "restore deletes GTK color-scheme backup"
 current=$(gesso theme current)
 [[ $current == "unset" ]] || fail "theme current prints unset after non-headless restore" "$current"
-pass "catppuccin-latte sets prefer-light and restore applies Breeze"
+pass "catppuccin-latte sets prefer-light and restore applies BreezeLight"
 
 rm -f "$HOME/gesso-stub.log"
 gesso theme set tokyo-night
@@ -313,3 +313,43 @@ foot=$(cat "$HOME/.config/foot/gesso-theme.ini")
 [[ $foot == *"selection-background=292e42"* ]] || fail "Foot derived selection-background strip" "$foot"
 [[ $foot == *"bright7=c0caf5"* ]] || fail "Foot bright7" "$foot"
 pass "Ghostty and Foot theme files render"
+
+unset GESSO_THEME_HEADLESS
+cat >"$HOME/gesso-stubs/plasma-apply-colorscheme" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$(basename "$0") $*" >>"$HOME/gesso-stub.log"
+if [[ ${1:-} == "-l" ]]; then
+  printf '%s\n' 'You have the following color schemes on your system:' ' * BreezeDark' ' * BreezeLight' ' * Gesso (current color scheme)'
+fi
+exit 0
+STUB
+chmod +x "$HOME/gesso-stubs/plasma-apply-colorscheme"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme set catppuccin-latte
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-colorscheme BreezeLight"$'\n'* ]] || fail "Gesso-to-Gesso light switch bounces through BreezeLight" "$stub"
+[[ ${stub%%plasma-apply-colorscheme Gesso*} == *"plasma-apply-colorscheme BreezeLight"* ]] || fail "bounce precedes the Gesso apply" "$stub"
+pass "switching between Gesso themes re-applies the scheme"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-colorscheme BreezeDark"$'\n'* ]] || fail "Gesso-to-Gesso dark switch bounces through BreezeDark" "$stub"
+pass "dark switch bounces through BreezeDark"
+
+cat >"$HOME/gesso-stubs/plasma-apply-colorscheme" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$(basename "$0") $*" >>"$HOME/gesso-stub.log"
+if [[ ${1:-} == "-l" ]]; then
+  printf '%s\n' 'You have the following color schemes on your system:' ' * BreezeDark' ' * BreezeLight (current color scheme)'
+fi
+exit 0
+STUB
+chmod +x "$HOME/gesso-stubs/plasma-apply-colorscheme"
+rm -f "$HOME/gesso-stub.log"
+gesso theme set nord
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub != *"plasma-apply-colorscheme BreezeDark"* ]] || fail "first apply does not bounce" "$stub"
+pass "first apply from Breeze does not bounce"
+export GESSO_THEME_HEADLESS=1
