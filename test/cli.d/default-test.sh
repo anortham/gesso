@@ -209,3 +209,22 @@ if grep -q 'gesso-cmd-present' "$ROOT/setup/qml/InstallPage.qml"; then
   fail "InstallPage does not use gesso-cmd-present"
 fi
 pass "InstallPage uses gesso-app-present"
+
+# Fedora 44 renamed firefox.desktop to org.mozilla.firefox.desktop, so the
+# catalog desktop_id can name a file that is not installed.
+apps_dir=$HOME/.local/share/applications
+mkdir -p "$apps_dir"
+got=$(gesso-app-present --desktop firefox)
+[[ $got == "firefox.desktop" ]] || fail "catalog desktop_id used when no file is installed" "$got"
+pass "desktop id falls back to the catalog value"
+
+printf '%s\n' '[Desktop Entry]' 'Name=Firefox' >"$apps_dir/org.mozilla.firefox.desktop"
+got=$(gesso-app-present --desktop firefox)
+[[ $got == "org.mozilla.firefox.desktop" ]] || fail "installed reverse-DNS desktop file wins" "$got"
+pass "desktop id resolves the installed reverse-DNS file"
+
+printf '%s\n' '[Desktop Entry]' 'Name=Firefox' >"$apps_dir/firefox.desktop"
+got=$(gesso-app-present --desktop firefox)
+[[ $got == "firefox.desktop" ]] || fail "catalog desktop_id wins when its file exists" "$got"
+pass "catalog desktop id wins when installed"
+rm -f "$apps_dir/firefox.desktop" "$apps_dir/org.mozilla.firefox.desktop"

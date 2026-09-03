@@ -45,7 +45,7 @@ colors=$state/current/theme/colors.toml
 if [[ -f $colors ]]; then
   mode=$(grep -E '^mode[[:space:]]*=' "$colors" | head -n1 | cut -d'"' -f2) || true
   if [[ $mode == "light" ]]; then
-    scheme=Breeze
+    scheme=BreezeLight
   fi
 fi
 rm -f "$name_file"

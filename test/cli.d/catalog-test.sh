@@ -83,3 +83,17 @@ fi
 got=$(gesso-app-present --desktop code)
 [[ $got == "com.visualstudio.code.desktop" ]] || fail "app-present --desktop still works for flatpak" "$got"
 pass "app-present single-id path unchanged"
+
+# Brave Origin ships only from Brave's own RPM repo, so it has no Flatpak
+# fallback. See TODO.md.
+got=$(gesso-catalog-get brave-origin dnf)
+[[ $got == "brave-origin" ]] || fail "brave-origin dnf package" "$got"
+got=$(gesso-catalog-get brave-origin command)
+[[ $got == "brave-origin" ]] || fail "brave-origin command" "$got"
+got=$(gesso-catalog-get brave-origin desktop_id)
+[[ $got == "brave-origin.desktop" ]] || fail "brave-origin desktop_id" "$got"
+got=$(gesso-catalog-get brave-origin flatpak)
+[[ -z $got ]] || fail "brave-origin has no flatpak fallback" "$got"
+kinds=$(gesso-catalog-get --kind browser)
+[[ $kinds == *brave-origin* ]] || fail "kind browser lists brave-origin" "$kinds"
+pass "brave-origin row has a dnf package and no flatpak fallback"

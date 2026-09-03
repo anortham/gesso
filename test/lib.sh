@@ -152,10 +152,13 @@ EOF
   mkdir -p "$sys"
   for cmd in python3 awk sed grep head cut sort cat mkdir chmod cp mv rm ln \
     basename dirname mktemp flock env uname tr tee touch bash wc date sleep \
-    cmp diff id; do
+    cmp diff id readlink; do
     path=$(type -P "$cmd" 2>/dev/null) || continue
     ln -s "$path" "$sys/$cmd"
   done
+  # Keep desktop-file lookups off the host's /usr/share/applications.
+  export XDG_DATA_DIRS="$HOME/gesso-datadirs"
+  mkdir -p "$HOME/gesso-datadirs/applications"
   export PATH="$stub:$ROOT/bin:$sys"
 }
 

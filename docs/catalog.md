@@ -26,12 +26,14 @@ Rules:
 - `dnf` is tried first, in order, with `sudo` or `pkexec`. If every RPM is missing from Fedora/RPM Fusion and `flatpak` is set, install that Flatpak per user with no elevation: `gesso pkg add` runs `flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`, then `flatpak install --user -y flathub <flatpak>`. The filtered system Flathub remote that stock Fedora ships is left alone.
 - `gesso-app-present <id>` is the presence check. Host first: `gesso-cmd-present` on `command`. Else `flatpak info` on `flatpak`.
 - `command` is the host binary. Helix is `hx`.
-- `desktop_id` is the host desktop file. When only Flatpak is present, defaults use `<flatpak>.desktop`.
+- `desktop_id` is the host desktop file. When only Flatpak is present, defaults use `<flatpak>.desktop`. `gesso-app-present --desktop` returns `desktop_id` when that file exists in the XDG application directories, and falls back to `<flatpak>.desktop` when it does not, because Fedora 44 renamed some desktop files to reverse-DNS ids (`firefox.desktop` became `org.mozilla.firefox.desktop`).
 - `gesso default editor <id>` writes `id` to `~/.local/state/gesso/defaults/editor`, then runs `xdg-mime default <desktop> <mime>...` with the desktop id from `gesso-app-present --desktop <id>` for these types: `text/plain`, `text/markdown`, `text/x-shellscript`, `application/x-shellscript`, `text/x-python`, `application/json`, `text/xml`, `application/xml`, `text/css`, `text/javascript`, `application/toml`, `application/x-yaml`. The launch command is `command`.
 
-v1 browser ids: `firefox`, `chromium`, `chrome`, `brave`, `edge`. Terminal ids: `konsole`, `ghostty`, `kitty`, `foot`. Editor ids: `code`, `kate`, `nvim`, `helix`, `zed`.
+v1 browser ids: `firefox`, `chromium`, `chrome`, `brave`, `brave-origin`, `edge`. Terminal ids: `konsole`, `ghostty`, `kitty`, `foot`. Editor ids: `code`, `kate`, `nvim`, `helix`, `zed`.
 
 Do not add a row without a tested install path on Fedora 44.
+
+`brave-origin` is the one row that does not meet that bar. Brave Origin ships only from Brave's own RPM repository, and `gesso pkg add brave-origin` therefore succeeds only on a machine where the user has already run `dnf config-manager addrepo --from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo`. Gesso cannot add that repository itself, because writing `/etc/yum.repos.d/` is a hard no in [`../AGENTS.md`](../AGENTS.md). With the repo absent, `dnf install` fails, the empty `flatpak` field skips the Flatpak fallback, and `gesso pkg add` prints `failed to install brave-origin` and exits 1. `gesso default browser brave-origin` still works once the browser is installed by any means. See [`../TODO.md`](../TODO.md).
 
 ## `data/agents.toml`
 
