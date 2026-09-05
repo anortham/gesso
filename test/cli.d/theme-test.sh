@@ -184,8 +184,10 @@ pass "Konsole scheme and profile applied"
 mkdir -p "$HOME/.config/kitty"
 gesso theme set tokyo-night
 [[ -f $HOME/.config/kitty/gesso-theme.conf ]] || fail "Kitty gesso-theme.conf copied when config dir exists"
-[[ -f $HOME/.config/kitty/kitty.conf ]] && fail "does not write kitty.conf"
-pass "Kitty theme file copied without clobbering kitty.conf"
+[[ -f $HOME/.config/kitty/kitty.conf ]] || fail "Kitty creates kitty.conf if missing"
+kitty_conf_content=$(cat "$HOME/.config/kitty/kitty.conf")
+[[ $kitty_conf_content == *"include gesso-theme.conf"* ]] || fail "kitty.conf includes gesso-theme.conf" "$kitty_conf_content"
+pass "Kitty theme file copied and enabled in kitty.conf"
 
 mkdir -p "$HOME/.config/Code/User"
 printf '%s\n' '{"editor.fontSize": 14, "workbench.colorCustomizations": {"editor.background": "#111111"}}' >"$HOME/.config/Code/User/settings.json"
@@ -340,14 +342,14 @@ wall_has_bg=$(gesso theme list --json | python3 -c 'import json, sys; print(next
 [[ $wall_has_bg == "True" ]] || fail "theme list --json detects wallpaper availability" "$wall_has_bg"
 pass "theme list --json detects wallpaper availability"
 rm -f "$HOME/gesso-stub.log"
-gesso theme set wall-night
+gesso theme set wall-night --wallpaper theme
 stub=$(cat "$HOME/gesso-stub.log")
 [[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/current/theme/backgrounds/a.png"* ]] || fail "wallpaper applies first sorted background" "$stub"
 pass "theme with backgrounds applies the first wallpaper"
 
 export GESSO_THEME_HEADLESS=1
 rm -f "$HOME/gesso-stub.log"
-gesso theme set wall-night
+gesso theme set wall-night --wallpaper theme
 [[ -f $HOME/gesso-stub.log ]] && fail "headless apply skips wallpaper" "$(cat "$HOME/gesso-stub.log")"
 pass "headless apply skips wallpaper"
 
@@ -403,4 +405,104 @@ gesso theme set nord
 stub=$(cat "$HOME/gesso-stub.log")
 [[ $stub != *"plasma-apply-colorscheme BreezeDark"* ]] || fail "first apply does not bounce" "$stub"
 pass "first apply from Breeze does not bounce"
+export GESSO_THEME_HEADLESS=1
+
+# --- Task 3 tests: Wallpaper Modes, Terminal Enablement, Undo State ---
+
+unset GESSO_THEME_HEADLESS
+rm -f "$HOME/gesso-stub.log"
+gesso theme set wall-night
+if [[ -f $HOME/gesso-stub.log ]] && grep -q 'plasma-apply-wallpaperimage' "$HOME/gesso-stub.log"; then
+  fail "default wallpaper mode keep does not run plasma-apply-wallpaperimage" "$(cat "$HOME/gesso-stub.log")"
+fi
+pass "default wallpaper mode keep does not run plasma-apply-wallpaperimage"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme set wall-night --wallpaper keep
+if [[ -f $HOME/gesso-stub.log ]] && grep -q 'plasma-apply-wallpaperimage' "$HOME/gesso-stub.log"; then
+  fail "explicit --wallpaper keep does not run plasma-apply-wallpaperimage" "$(cat "$HOME/gesso-stub.log")"
+fi
+pass "explicit --wallpaper keep does not run plasma-apply-wallpaperimage"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme set wall-night --wallpaper theme
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/current/theme/backgrounds/a.png"* ]] || fail "--wallpaper theme applies bundled wallpaper" "$stub"
+pass "--wallpaper theme applies bundled wallpaper"
+
+custom_img=$HOME/my-custom-bg.png
+touch "$custom_img"
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night --wallpaper "$custom_img"
+[[ -f $HOME/.local/state/gesso/wallpapers/my-custom-bg.png ]] || fail "custom wallpaper copied to state dir"
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/my-custom-bg.png"* ]] || fail "custom wallpaper applied via plasma-apply-wallpaperimage" "$stub"
+pass "custom wallpaper copied and applied"
+
+custom_img2=$HOME/custom2.jpg
+touch "$custom_img2"
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night --wallpaper custom "$custom_img2"
+[[ -f $HOME/.local/state/gesso/wallpapers/custom2.jpg ]] || fail "--wallpaper custom copied to state dir"
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/custom2.jpg"* ]] || fail "--wallpaper custom applied via plasma-apply-wallpaperimage" "$stub"
+pass "--wallpaper custom copied and applied"
+
+# Terminal enablement and deduplication: Kitty
+mkdir -p "$HOME/.config/kitty"
+printf 'font_size 12.0\n' >"$HOME/.config/kitty/kitty.conf"
+gesso theme set tokyo-night
+kconf=$(cat "$HOME/.config/kitty/kitty.conf")
+[[ $kconf == *"font_size 12.0"* ]] || fail "kitty.conf preserves existing settings" "$kconf"
+[[ $kconf == *"include gesso-theme.conf"* ]] || fail "kitty.conf receives include" "$kconf"
+gesso theme set nord
+kconf_after=$(cat "$HOME/.config/kitty/kitty.conf")
+k_count=$(grep -c 'include gesso-theme.conf' "$HOME/.config/kitty/kitty.conf")
+((k_count == 1)) || fail "kitty.conf has exactly one include line without duplication" "$k_count"
+pass "kitty.conf receives include and does not duplicate"
+
+# Terminal enablement and deduplication: Ghostty
+mkdir -p "$HOME/.config/ghostty"
+printf 'font-size = 14\ntheme = Dracula\n' >"$HOME/.config/ghostty/config"
+gesso theme set tokyo-night
+gconf=$(cat "$HOME/.config/ghostty/config")
+[[ $gconf == *"font-size = 14"* ]] || fail "ghostty config preserves existing settings" "$gconf"
+[[ $gconf == *"theme = Gesso"* ]] || fail "ghostty config replaces theme with Gesso" "$gconf"
+[[ -f $HOME/.local/state/gesso/undo/ghostty-theme ]] || fail "undo/ghostty-theme exists"
+[[ $(cat "$HOME/.local/state/gesso/undo/ghostty-theme") == "Dracula" ]] || fail "undo/ghostty-theme contains Dracula" "$(cat "$HOME/.local/state/gesso/undo/ghostty-theme")"
+gesso theme set nord
+g_count=$(grep -c 'theme = Gesso' "$HOME/.config/ghostty/config")
+((g_count == 1)) || fail "ghostty config has exactly one theme = Gesso line without duplication" "$g_count"
+pass "ghostty config replaces theme and does not duplicate"
+
+# Terminal enablement and deduplication: Foot
+mkdir -p "$HOME/.config/foot"
+printf '[main]\nfont=monospace:size=11\n\n[scrollback]\nlines=500\n' >"$HOME/.config/foot/foot.ini"
+gesso theme set tokyo-night
+fconf=$(cat "$HOME/.config/foot/foot.ini")
+[[ $fconf == *"font=monospace:size=11"* ]] || fail "foot.ini preserves existing settings" "$fconf"
+[[ $fconf == *"include = ~/.config/foot/gesso-theme.ini"* ]] || fail "foot.ini receives include under main" "$fconf"
+gesso theme set nord
+f_count=$(grep -c 'gesso-theme.ini' "$HOME/.config/foot/foot.ini")
+((f_count == 1)) || fail "foot.ini has exactly one include line without duplication" "$f_count"
+pass "foot.ini receives include under [main] and does not duplicate"
+
+# Undo state
+gesso theme set tokyo-night
+gesso theme set nord
+[[ -f $HOME/.local/state/gesso/undo/previous-theme.name ]] || fail "undo/previous-theme.name exists"
+[[ $(cat "$HOME/.local/state/gesso/undo/previous-theme.name") == "tokyo-night" ]] || fail "undo/previous-theme.name contains tokyo-night" "$(cat "$HOME/.local/state/gesso/undo/previous-theme.name")"
+pass "undo records previous theme name"
+
+gesso theme set wall-night --wallpaper theme
+gesso theme set tokyo-night --wallpaper keep
+[[ -f $HOME/.local/state/gesso/undo/wallpaper ]] || fail "undo/wallpaper exists"
+[[ $(cat "$HOME/.local/state/gesso/undo/wallpaper") == "$HOME/.local/state/gesso/current/theme/backgrounds/a.png" ]] || fail "undo/wallpaper records previous wallpaper" "$(cat "$HOME/.local/state/gesso/undo/wallpaper")"
+pass "undo records previous wallpaper"
+
+[[ -f $HOME/.local/state/gesso/undo/kitty-state ]] || fail "undo/kitty-state exists"
+[[ -f $HOME/.local/state/gesso/undo/ghostty-state ]] || fail "undo/ghostty-state exists"
+[[ -f $HOME/.local/state/gesso/undo/foot-state ]] || fail "undo/foot-state exists"
+pass "undo records terminal state markers"
+
 export GESSO_THEME_HEADLESS=1

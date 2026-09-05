@@ -1,19 +1,70 @@
 #!/bin/bash
 # gesso:summary=Apply a Gesso theme
-# gesso:args=<name>
+# gesso:args=<name> [--wallpaper <keep|theme|path>]
 
 set -euo pipefail
 
 usage() {
-  printf 'Usage: gesso theme set <name>\n'
+  printf 'Usage: gesso theme set <name> [--wallpaper <keep|theme|path>]\n'
 }
 
-if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
-  usage
-  exit 0
-fi
+wallpaper_mode="keep"
+wallpaper_arg=
+name=
 
-if (($# == 0)); then
+while (($# > 0)); do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --wallpaper)
+      shift
+      if (($# == 0)); then
+        usage >&2
+        exit 1
+      fi
+      if [[ $1 == "keep" || $1 == "theme" ]]; then
+        wallpaper_mode=$1
+      elif [[ $1 == "custom" ]]; then
+        shift
+        if (($# == 0)); then
+          usage >&2
+          exit 1
+        fi
+        wallpaper_mode="custom"
+        wallpaper_arg=$1
+      else
+        wallpaper_mode="custom"
+        wallpaper_arg=$1
+      fi
+      ;;
+    --wallpaper=*)
+      val=${1#*=}
+      if [[ $val == "keep" || $val == "theme" ]]; then
+        wallpaper_mode=$val
+      else
+        wallpaper_mode="custom"
+        wallpaper_arg=$val
+      fi
+      ;;
+    -*)
+      usage >&2
+      exit 1
+      ;;
+    *)
+      if [[ -z $name ]]; then
+        name=$1
+      else
+        usage >&2
+        exit 1
+      fi
+      ;;
+  esac
+  shift
+done
+
+if [[ -z $name ]]; then
   usage >&2
   exit 1
 fi
@@ -23,10 +74,19 @@ if [[ -z ${GESSO_PATH:-} ]]; then
   exit 1
 fi
 
-name=$1
 if [[ ! $name =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
   printf 'Unknown theme: %s\n' "$name" >&2
   exit 1
+fi
+
+if [[ $wallpaper_mode == "custom" ]]; then
+  if [[ $wallpaper_arg == "~/"* ]]; then
+    wallpaper_arg="$HOME/${wallpaper_arg#"~/"}"
+  fi
+  if [[ ! -f $wallpaper_arg ]]; then
+    printf 'Wallpaper not found: %s\n' "$wallpaper_arg" >&2
+    exit 1
+  fi
 fi
 
 builtin_dir=$GESSO_PATH/themes/$name
@@ -59,6 +119,8 @@ fi
 state_dir=$HOME/.local/state/gesso/current
 next=$state_dir/next-theme
 current=$state_dir/theme
+undo_dir=$HOME/.local/state/gesso/undo
+next_undo=$state_dir/next-undo
 lock_dir=${XDG_RUNTIME_DIR:-$HOME/.local/state/gesso}
 lock=$lock_dir/gesso-theme-set.lock
 
@@ -121,7 +183,7 @@ fail_publish() {
       rm -f "$staged"
     fi
   done
-  rm -rf "$next"
+  rm -rf "$next" "$next_undo"
   if (($# > 0)); then
     printf '%s\n' "$1" >&2
   fi
@@ -194,24 +256,97 @@ else
   printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Gesso.profile' >"$HOME/.config/konsolerc"
 fi
 
+# Prepare undo state capture before modifying terminal configs or theme state
+rm -rf "$next_undo"
+mkdir -p "$next_undo"
+
+if [[ -f $state_dir/theme.name ]]; then
+  cp "$state_dir/theme.name" "$next_undo/previous-theme.name"
+fi
+
+prev_wallpaper=
+if [[ -f $state_dir/wallpaper && -s $state_dir/wallpaper ]]; then
+  prev_wallpaper=$(cat "$state_dir/wallpaper")
+elif [[ -f $HOME/.config/plasma-org.kde.plasma.desktop-appletsrc ]]; then
+  prev_wallpaper=$(grep -E '^[[:space:]]*Image=' "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" | head -n1 | cut -d= -f2- | sed 's|^file://||' || true)
+fi
+if [[ -n $prev_wallpaper ]]; then
+  printf '%s\n' "$prev_wallpaper" >"$next_undo/wallpaper"
+fi
+
+kitty_state=
 if [[ -f $next/kitty.conf ]]; then
   if command -v kitty >/dev/null || [[ -d $HOME/.config/kitty ]]; then
     mkdir -p "$HOME/.config/kitty"
     cp "$next/kitty.conf" "$HOME/.config/kitty/gesso-theme.conf"
+    kitty_conf=$HOME/.config/kitty/kitty.conf
+    if [[ ! -f $kitty_conf ]]; then
+      kitty_state="created"
+      printf 'include gesso-theme.conf\n' >"$kitty_conf"
+    elif grep -qE '^[[:space:]]*include[[:space:]]+.*gesso-theme\.conf' "$kitty_conf"; then
+      kitty_state="existed"
+    else
+      kitty_state="added"
+      printf 'include gesso-theme.conf\n' >>"$kitty_conf"
+    fi
   fi
 fi
+if [[ -n $kitty_state ]]; then
+  printf '%s\n' "$kitty_state" >"$next_undo/kitty-state"
+fi
+
+ghostty_state=
+ghostty_prev_theme=
 if [[ -f $next/ghostty ]]; then
   if command -v ghostty >/dev/null || [[ -d $HOME/.config/ghostty ]]; then
     mkdir -p "$HOME/.config/ghostty/themes"
     cp "$next/ghostty" "$HOME/.config/ghostty/themes/Gesso"
+    ghostty_conf=$HOME/.config/ghostty/config
+    if [[ ! -f $ghostty_conf ]]; then
+      ghostty_state="created"
+      printf 'theme = Gesso\n' >"$ghostty_conf"
+    elif grep -qE '^[[:space:]]*theme[[:space:]]*=' "$ghostty_conf"; then
+      ghostty_state="replaced"
+      ghostty_prev_theme=$(grep -E '^[[:space:]]*theme[[:space:]]*=' "$ghostty_conf" | head -n1 | sed -E 's/^[[:space:]]*theme[[:space:]]*=[[:space:]]*//')
+      sed -i -E 's/^[[:space:]]*theme[[:space:]]*=.*/theme = Gesso/' "$ghostty_conf"
+    else
+      ghostty_state="added"
+      printf 'theme = Gesso\n' >>"$ghostty_conf"
+    fi
   fi
 fi
+if [[ -n $ghostty_state ]]; then
+  printf '%s\n' "$ghostty_state" >"$next_undo/ghostty-state"
+fi
+if [[ $ghostty_state == "replaced" ]]; then
+  printf '%s\n' "$ghostty_prev_theme" >"$next_undo/ghostty-theme"
+fi
+
+foot_state=
 if [[ -f $next/foot.ini ]]; then
   if command -v foot >/dev/null || [[ -d $HOME/.config/foot ]]; then
     mkdir -p "$HOME/.config/foot"
     cp "$next/foot.ini" "$HOME/.config/foot/gesso-theme.ini"
+    foot_conf=$HOME/.config/foot/foot.ini
+    if [[ ! -f $foot_conf ]]; then
+      foot_state="created"
+      printf '[main]\ninclude = ~/.config/foot/gesso-theme.ini\n' >"$foot_conf"
+    elif grep -qE '^[[:space:]]*include[[:space:]]*=[[:space:]]*.*gesso-theme\.ini' "$foot_conf"; then
+      foot_state="existed"
+    else
+      foot_state="added"
+      if grep -q '^\[main\]' "$foot_conf"; then
+        sed -i '/^\[main\]/a include = ~\/.config\/foot\/gesso-theme.ini' "$foot_conf"
+      else
+        printf 'include = ~/.config/foot/gesso-theme.ini\n' >>"$foot_conf"
+      fi
+    fi
   fi
 fi
+if [[ -n $foot_state ]]; then
+  printf '%s\n' "$foot_state" >"$next_undo/foot-state"
+fi
+
 for i in "${!vscode_dirs[@]}"; do
   if [[ -n ${vscode_staged[i]} ]]; then
     cp "$next/vscode.json" "${vscode_dirs[i]}/gesso-theme.json"
@@ -227,15 +362,31 @@ if [[ -n $aside ]]; then
   rm -f "$aside"
 fi
 
-shopt -s nullglob
-if [[ -z ${GESSO_THEME_HEADLESS:-} ]] && command -v plasma-apply-wallpaperimage >/dev/null; then
-  for wallpaper in "$current/backgrounds"/*; do
-    if [[ -f $wallpaper ]]; then
-      plasma-apply-wallpaperimage "$wallpaper" || true
+applied_wallpaper=
+if [[ $wallpaper_mode == "theme" ]]; then
+  shopt -s nullglob
+  for wp in "$current/backgrounds"/*; do
+    if [[ -f $wp ]]; then
+      applied_wallpaper=$wp
       break
     fi
   done
+elif [[ $wallpaper_mode == "custom" ]]; then
+  mkdir -p "$HOME/.local/state/gesso/wallpapers"
+  dest=$HOME/.local/state/gesso/wallpapers/$(basename "$wallpaper_arg")
+  cp -f "$wallpaper_arg" "$dest"
+  applied_wallpaper=$dest
 fi
+
+if [[ -n $applied_wallpaper ]]; then
+  printf '%s\n' "$applied_wallpaper" >"$state_dir/wallpaper"
+  if [[ -z ${GESSO_THEME_HEADLESS:-} ]] && command -v plasma-apply-wallpaperimage >/dev/null; then
+    plasma-apply-wallpaperimage "$applied_wallpaper" || true
+  fi
+fi
+
+rm -rf "$undo_dir"
+mv "$next_undo" "$undo_dir"
 
 if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
   if command -v gsettings >/dev/null; then
