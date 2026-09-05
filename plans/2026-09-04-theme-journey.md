@@ -134,11 +134,11 @@ Extend `gesso-theme-set`:
 Follow existing atomic replacement and staged update patterns. Ensure sed/grep modifications to user configs are idempotent and easily rolled back.
 
 **Acceptance criteria:**
-- [ ] `gesso theme set <name> --wallpaper keep` preserves current wallpaper
-- [ ] `gesso theme set <name> --wallpaper theme` applies bundled wallpaper
-- [ ] Terminal config files for Kitty, Ghostty, and Foot receive appropriate includes without duplicating lines
-- [ ] Prior state is saved in `$HOME/.local/state/gesso/undo/`
-- [ ] Tests in `test/cli.d/theme-test.sh` pass
+- [x] `gesso theme set <name> --wallpaper keep` preserves current wallpaper
+- [x] `gesso theme set <name> --wallpaper theme` applies bundled wallpaper
+- [x] Terminal config files for Kitty, Ghostty, and Foot receive appropriate includes without duplicating lines
+- [x] Prior state is saved in `$HOME/.local/state/gesso/undo/`
+- [x] Tests in `test/cli.d/theme-test.sh` pass
 
 ---
 
