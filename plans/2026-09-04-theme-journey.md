@@ -165,11 +165,11 @@ Follow existing atomic replacement and staged update patterns. Ensure sed/grep m
 Add `gesso-theme-undo` with `# gesso:summary=Undo the last applied Gesso theme`. Ensure `gesso theme restore` handles clean removal of includes without corrupting surrounding config options.
 
 **Acceptance criteria:**
-- [ ] `gesso theme undo` reverts desktop, wallpaper, and terminal configs to the immediate prior state
-- [ ] `gesso theme undo` without prior state exits with error message
-- [ ] `gesso theme restore` cleans up all Gesso modifications and resets to baseline Breeze
-- [ ] `gesso theme` lists `undo` and `restore`
-- [ ] Tests in `test/cli.d/theme-test.sh` pass
+- [x] `gesso theme undo` reverts desktop, wallpaper, and terminal configs to the immediate prior state
+- [x] `gesso theme undo` without prior state exits with error message
+- [x] `gesso theme restore` cleans up all Gesso modifications and resets to baseline Breeze
+- [x] `gesso theme` lists `undo` and `restore`
+- [x] Tests in `test/cli.d/theme-test.sh` pass
 
 ---
 
