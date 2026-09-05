@@ -344,7 +344,7 @@ pass "theme list --json detects wallpaper availability"
 rm -f "$HOME/gesso-stub.log"
 gesso theme set wall-night --wallpaper theme
 stub=$(cat "$HOME/gesso-stub.log")
-[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/current/theme/backgrounds/a.png"* ]] || fail "wallpaper applies first sorted background" "$stub"
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/"*"-a.png"* ]] || fail "wallpaper applies first sorted background" "$stub"
 pass "theme with backgrounds applies the first wallpaper"
 
 export GESSO_THEME_HEADLESS=1
@@ -427,25 +427,28 @@ pass "explicit --wallpaper keep does not run plasma-apply-wallpaperimage"
 rm -f "$HOME/gesso-stub.log"
 gesso theme set wall-night --wallpaper theme
 stub=$(cat "$HOME/gesso-stub.log")
-[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/current/theme/backgrounds/a.png"* ]] || fail "--wallpaper theme applies bundled wallpaper" "$stub"
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/"*"-a.png"* ]] || fail "--wallpaper theme applies bundled wallpaper" "$stub"
 pass "--wallpaper theme applies bundled wallpaper"
 
 custom_img=$HOME/my-custom-bg.png
 touch "$custom_img"
 rm -f "$HOME/gesso-stub.log"
 gesso theme set tokyo-night --wallpaper "$custom_img"
-[[ -f $HOME/.local/state/gesso/wallpapers/my-custom-bg.png ]] || fail "custom wallpaper copied to state dir"
+shopt -s nullglob
+matches=("$HOME"/.local/state/gesso/wallpapers/*-my-custom-bg.png)
+(( ${#matches[@]} == 1 )) || fail "custom wallpaper copied to state dir"
 stub=$(cat "$HOME/gesso-stub.log")
-[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/my-custom-bg.png"* ]] || fail "custom wallpaper applied via plasma-apply-wallpaperimage" "$stub"
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/"*"-my-custom-bg.png"* ]] || fail "custom wallpaper applied via plasma-apply-wallpaperimage" "$stub"
 pass "custom wallpaper copied and applied"
 
 custom_img2=$HOME/custom2.jpg
 touch "$custom_img2"
 rm -f "$HOME/gesso-stub.log"
 gesso theme set tokyo-night --wallpaper custom "$custom_img2"
-[[ -f $HOME/.local/state/gesso/wallpapers/custom2.jpg ]] || fail "--wallpaper custom copied to state dir"
+matches=("$HOME"/.local/state/gesso/wallpapers/*-custom2.jpg)
+(( ${#matches[@]} == 1 )) || fail "--wallpaper custom copied to state dir"
 stub=$(cat "$HOME/gesso-stub.log")
-[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/custom2.jpg"* ]] || fail "--wallpaper custom applied via plasma-apply-wallpaperimage" "$stub"
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/"*"-custom2.jpg"* ]] || fail "--wallpaper custom applied via plasma-apply-wallpaperimage" "$stub"
 pass "--wallpaper custom copied and applied"
 
 # Terminal enablement and deduplication: Kitty
@@ -497,7 +500,7 @@ pass "undo records previous theme name"
 gesso theme set wall-night --wallpaper theme
 gesso theme set tokyo-night --wallpaper keep
 [[ -f $HOME/.local/state/gesso/undo/wallpaper ]] || fail "undo/wallpaper exists"
-[[ $(cat "$HOME/.local/state/gesso/undo/wallpaper") == "$HOME/.local/state/gesso/current/theme/backgrounds/a.png" ]] || fail "undo/wallpaper records previous wallpaper" "$(cat "$HOME/.local/state/gesso/undo/wallpaper")"
+[[ $(cat "$HOME/.local/state/gesso/undo/wallpaper") == "$HOME/.local/state/gesso/wallpapers/"*"-a.png" ]] || fail "undo/wallpaper records previous wallpaper" "$(cat "$HOME/.local/state/gesso/undo/wallpaper")"
 pass "undo records previous wallpaper"
 
 [[ -f $HOME/.local/state/gesso/undo/kitty-state ]] || fail "undo/kitty-state exists"
@@ -549,14 +552,14 @@ rm -f "$HOME/gesso-stub.log"
 gesso theme set nord --wallpaper "$custom_img2"
 [[ $(cat "$HOME/.local/state/gesso/current/theme.name") == "nord" ]] || fail "theme is nord"
 stub=$(cat "$HOME/gesso-stub.log")
-[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/custom2.jpg"* ]] || fail "nord wallpaper applied" "$stub"
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/"*"-custom2.jpg"* ]] || fail "nord wallpaper applied" "$stub"
 
 rm -f "$HOME/gesso-stub.log"
 gesso theme undo
 [[ $(cat "$HOME/.local/state/gesso/current/theme.name") == "tokyo-night" ]] || fail "theme restored to tokyo-night" "$(cat "$HOME/.local/state/gesso/current/theme.name")"
-[[ $(cat "$HOME/.local/state/gesso/current/wallpaper") == "$HOME/.local/state/gesso/wallpapers/my-custom-bg.png" ]] || fail "wallpaper restored to my-custom-bg.png"
+[[ $(cat "$HOME/.local/state/gesso/current/wallpaper") == "$HOME/.local/state/gesso/wallpapers/"*"-my-custom-bg.png" ]] || fail "wallpaper restored to my-custom-bg.png"
 stub=$(cat "$HOME/gesso-stub.log")
-[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/my-custom-bg.png"* ]] || fail "wallpaper reapplied on undo" "$stub"
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/"*"-my-custom-bg.png"* ]] || fail "wallpaper reapplied on undo" "$stub"
 
 kconf=$(cat "$HOME/.config/kitty/kitty.conf")
 [[ $kconf == *"include gesso-theme.conf"* ]] || fail "kitty.conf has include" "$kconf"
@@ -639,5 +642,113 @@ stub=$(cat "$HOME/gesso-stub.log")
 [[ $stub == *"plasma-apply-wallpaperimage $custom_img"* ]] || fail "undo to baseline reapplies baseline wallpaper" "$stub"
 [[ ! -f $HOME/.local/state/gesso/current/wallpaper ]] || fail "current/wallpaper removed on baseline undo"
 pass "undo to baseline reapplies baseline wallpaper"
+
+export GESSO_THEME_HEADLESS=1
+
+# --- Pre-Merge Review Regression Tests ---
+
+# 1. Ghostty sed escaping & command injection defense
+mkdir -p "$HOME/.config/ghostty"
+printf 'theme = x/;e printf GESSO_COMMAND_INJECTION_FAIL #\n' >"$HOME/.config/ghostty/config"
+gesso theme set tokyo-night
+gesso theme restore
+gconf=$(cat "$HOME/.config/ghostty/config")
+[[ $gconf == *"theme = x/;e printf GESSO_COMMAND_INJECTION_FAIL #"* ]] || fail "Ghostty restore literally restores theme with special characters" "$gconf"
+pass "Ghostty restore literally restores theme with special characters without command execution"
+
+# 2. Trailing newline safety on Kitty and Ghostty configs
+printf 'font_size 12.0' >"$HOME/.config/kitty/kitty.conf"
+printf 'font-size = 14' >"$HOME/.config/ghostty/config"
+gesso theme set tokyo-night
+kconf=$(cat "$HOME/.config/kitty/kitty.conf")
+[[ $kconf == *"font_size 12.0"* ]] || fail "kitty.conf has font_size 12.0" "$kconf"
+[[ $kconf != *"font_size 12.0include"* ]] || fail "kitty.conf did not concatenate include onto previous line" "$kconf"
+gconf=$(cat "$HOME/.config/ghostty/config")
+[[ $gconf == *"font-size = 14"* ]] || fail "ghostty config has font-size = 14" "$gconf"
+[[ $gconf != *"font-size = 14theme"* ]] || fail "ghostty config did not concatenate theme onto previous line" "$gconf"
+pass "terminal appends respect line boundaries when files lack trailing newlines"
+
+# 3. Foot include section placement when no [main] section exists
+printf '[colors]\nbackground=000000\n' >"$HOME/.config/foot/foot.ini"
+gesso theme set tokyo-night
+fconf=$(cat "$HOME/.config/foot/foot.ini")
+[[ $fconf == *"[main]"* ]] || fail "foot.ini contains [main] header" "$fconf"
+main_idx=$(python3 -c 'import sys; c=open(sys.argv[1]).read(); print(c.index("[main]"))' "$HOME/.config/foot/foot.ini")
+colors_idx=$(python3 -c 'import sys; c=open(sys.argv[1]).read(); print(c.index("[colors]"))' "$HOME/.config/foot/foot.ini")
+(( main_idx < colors_idx )) || fail "[main] appears before other sections in foot.ini" "$fconf"
+pass "foot include is placed under [main] and does not leak into other sections"
+
+# 4. Multi-apply baseline restore (preserves pre-Gesso baseline across repeated applies)
+gesso theme restore
+printf 'theme = OriginalGhostty\n' >"$HOME/.config/ghostty/config"
+initial_wp=$HOME/original-wp.png
+touch "$initial_wp"
+printf '%s\n' '[Containments][1][Wallpaper][org.kde.image][General]' "Image=file://$initial_wp" >"$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+wp1=$HOME/wp1.png
+touch "$wp1"
+wp2=$HOME/wp2.png
+touch "$wp2"
+unset GESSO_THEME_HEADLESS
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night --wallpaper "$wp1"
+gesso theme set nord --wallpaper "$wp2"
+rm -f "$HOME/gesso-stub.log"
+gesso theme restore
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $initial_wp"* ]] || fail "multi-apply restore recovers pre-Gesso baseline wallpaper" "$stub"
+gconf=$(cat "$HOME/.config/ghostty/config")
+[[ $gconf == *"theme = OriginalGhostty"* ]] || fail "multi-apply restore recovers pre-Gesso Ghostty theme" "$gconf"
+pass "multi-apply restore preserves pre-Gesso wallpaper and Ghostty baseline"
+
+# 5. Keeping a theme wallpaper does not delete backing image when switching themes
+rm -f "$HOME/gesso-stub.log"
+gesso theme set wall-night --wallpaper theme
+current_wp=$(cat "$HOME/.local/state/gesso/current/wallpaper")
+[[ -f $current_wp ]] || fail "applied theme wallpaper exists"
+gesso theme set tokyo-night --wallpaper keep
+[[ -f $current_wp ]] || fail "theme wallpaper file still exists after switching themes with --wallpaper keep"
+[[ $(cat "$HOME/.local/state/gesso/current/wallpaper") == "$current_wp" ]] || fail "wallpaper path preserved with --wallpaper keep"
+pass "keeping theme wallpaper preserves backing image across theme changes"
+
+# 6. Unique wallpaper storage (no overwrite when different files share the same filename)
+dir_a=$HOME/dir_a
+dir_b=$HOME/dir_b
+mkdir -p "$dir_a" "$dir_b"
+printf 'IMG_A_CONTENT' >"$dir_a/photo.jpg"
+printf 'IMG_B_CONTENT' >"$dir_b/photo.jpg"
+gesso theme set tokyo-night --wallpaper "$dir_a/photo.jpg"
+wp_a_dest=$(cat "$HOME/.local/state/gesso/current/wallpaper")
+gesso theme set nord --wallpaper "$dir_b/photo.jpg"
+wp_b_dest=$(cat "$HOME/.local/state/gesso/current/wallpaper")
+[[ $wp_a_dest != "$wp_b_dest" ]] || fail "distinct images with same basename get unique stored destinations"
+[[ $(cat "$wp_a_dest") == "IMG_A_CONTENT" ]] || fail "first wallpaper retains original content"
+[[ $(cat "$wp_b_dest") == "IMG_B_CONTENT" ]] || fail "second wallpaper has new content"
+gesso theme undo
+[[ $(cat "$HOME/.local/state/gesso/current/wallpaper") == "$wp_a_dest" ]] || fail "undo restores first wallpaper path"
+[[ $(cat "$wp_a_dest") == "IMG_A_CONTENT" ]] || fail "undo restores first wallpaper bytes"
+pass "custom wallpapers with identical filenames are uniquely stored and recoverable"
+
+# 7. First-apply undo resets to baseline
+gesso theme restore
+gesso theme set tokyo-night
+[[ $(gesso theme current) == "tokyo-night" ]] || fail "theme set to tokyo-night"
+gesso theme undo
+[[ $(gesso theme current) == "unset" ]] || fail "first apply undo resets current theme to unset"
+pass "first-apply undo cleanly resets to baseline"
+
+# 8. Failed restoration preserves recovery state
+gesso theme set tokyo-night
+printf '%s\n' '#!/bin/bash' 'exit 1' >"$HOME/gesso-stubs/plasma-apply-colorscheme"
+chmod +x "$HOME/gesso-stubs/plasma-apply-colorscheme"
+if gesso theme restore >/dev/null 2>&1; then
+  fail "failing plasma-apply-colorscheme in restore exits non-zero"
+fi
+[[ -d $HOME/.local/state/gesso/undo ]] || fail "undo dir preserved when restore fails"
+[[ -f $HOME/.local/state/gesso/current/theme.name ]] || fail "current theme.name preserved when restore fails"
+printf '%s\n' '#!/bin/bash' 'exit 0' >"$HOME/gesso-stubs/plasma-apply-colorscheme"
+chmod +x "$HOME/gesso-stubs/plasma-apply-colorscheme"
+gesso theme restore
+[[ $(gesso theme current) == "unset" ]] || fail "subsequent restore succeeds"
+pass "failed restoration retains recovery state allowing retry"
 
 export GESSO_THEME_HEADLESS=1

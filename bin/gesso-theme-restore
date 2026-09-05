@@ -10,6 +10,31 @@ if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
 fi
 
 state=$HOME/.local/state/gesso
+lock_dir=${XDG_RUNTIME_DIR:-$state}
+lock=$lock_dir/gesso-theme-set.lock
+mkdir -p "$state" "$lock_dir"
+if [[ -z ${GESSO_LOCK_HELD:-} ]]; then
+  exec 9>"$lock"
+  flock 9
+  export GESSO_LOCK_HELD=1
+fi
+
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
+  if ! command -v plasma-apply-colorscheme >/dev/null; then
+    printf 'plasma-apply-colorscheme is not available\n' >&2
+    exit 1
+  fi
+fi
+
+scheme=BreezeDark
+colors=$state/current/theme/colors.toml
+if [[ -f $colors ]]; then
+  mode=$(grep -E '^mode[[:space:]]*=' "$colors" | head -n1 | cut -d'"' -f2 || true)
+  if [[ $mode == "light" ]]; then
+    scheme=BreezeLight
+  fi
+fi
+
 vscode_dirs=("$HOME/.config/Code/User" "$HOME/.var/app/com.visualstudio.code/config/Code/User")
 vscode_backups=("$state/vscode-colorCustomizations.json" "$state/vscode-flatpak-colorCustomizations.json")
 for i in "${!vscode_dirs[@]}"; do
@@ -32,7 +57,6 @@ if [[ -f $konsole_backup ]]; then
       sed -i '/^DefaultProfile=/d' "$konsolerc"
     fi
   fi
-  rm -f "$konsole_backup"
 fi
 
 undo_dir=$state/undo
@@ -41,12 +65,35 @@ ghostty_state=
 ghostty_theme=
 foot_state=
 prev_wallpaper=
-if [[ -d $undo_dir ]]; then
-  [[ -f $undo_dir/kitty-state ]] && kitty_state=$(cat "$undo_dir/kitty-state")
-  [[ -f $undo_dir/ghostty-state ]] && ghostty_state=$(cat "$undo_dir/ghostty-state")
-  [[ -f $undo_dir/ghostty-theme ]] && ghostty_theme=$(cat "$undo_dir/ghostty-theme")
-  [[ -f $undo_dir/foot-state ]] && foot_state=$(cat "$undo_dir/foot-state")
-  [[ -f $undo_dir/wallpaper ]] && prev_wallpaper=$(cat "$undo_dir/wallpaper")
+
+if [[ -f $state/kitty-baseline-state ]]; then
+  kitty_state=$(cat "$state/kitty-baseline-state")
+elif [[ -f $undo_dir/kitty-state ]]; then
+  kitty_state=$(cat "$undo_dir/kitty-state")
+fi
+
+if [[ -f $state/ghostty-baseline-state ]]; then
+  ghostty_state=$(cat "$state/ghostty-baseline-state")
+elif [[ -f $undo_dir/ghostty-state ]]; then
+  ghostty_state=$(cat "$undo_dir/ghostty-state")
+fi
+
+if [[ -f $state/ghostty-baseline-theme ]]; then
+  ghostty_theme=$(cat "$state/ghostty-baseline-theme")
+elif [[ -f $undo_dir/ghostty-theme ]]; then
+  ghostty_theme=$(cat "$undo_dir/ghostty-theme")
+fi
+
+if [[ -f $state/foot-baseline-state ]]; then
+  foot_state=$(cat "$state/foot-baseline-state")
+elif [[ -f $undo_dir/foot-state ]]; then
+  foot_state=$(cat "$undo_dir/foot-state")
+fi
+
+if [[ -f $state/wallpaper-baseline ]]; then
+  prev_wallpaper=$(cat "$state/wallpaper-baseline")
+elif [[ -f $undo_dir/wallpaper ]]; then
+  prev_wallpaper=$(cat "$undo_dir/wallpaper")
 fi
 
 kitty_conf=$HOME/.config/kitty/kitty.conf
@@ -63,7 +110,10 @@ rm -f "$HOME/.config/kitty/gesso-theme.conf"
 ghostty_conf=$HOME/.config/ghostty/config
 if [[ -f $ghostty_conf ]]; then
   if [[ -n $ghostty_theme && $ghostty_theme != "Gesso" ]]; then
-    sed -i -E "s/^[[:space:]]*theme[[:space:]]*=.*/theme = $ghostty_theme/" "$ghostty_conf"
+    escaped_ghostty=${ghostty_theme//\\/\\\\}
+    escaped_ghostty=${escaped_ghostty//\//\\/}
+    escaped_ghostty=${escaped_ghostty//&/\\&}
+    sed -i -E "s/^[[:space:]]*theme[[:space:]]*=.*/theme = $escaped_ghostty/" "$ghostty_conf"
   else
     sed -i -E '/^[[:space:]]*theme[[:space:]]*=[[:space:]]*Gesso[[:space:]]*$/d' "$ghostty_conf"
   fi
@@ -87,41 +137,14 @@ fi
 rm -f "$HOME/.config/foot/gesso-theme.ini"
 
 if [[ -z ${GESSO_THEME_HEADLESS:-} ]] && command -v plasma-apply-wallpaperimage >/dev/null; then
-  if [[ -n $prev_wallpaper ]]; then
-    plasma-apply-wallpaperimage "$prev_wallpaper" || true
+  if [[ -n $prev_wallpaper && -f $prev_wallpaper ]]; then
+    plasma-apply-wallpaperimage "$prev_wallpaper"
   fi
 fi
 
-rm -rf "$undo_dir"
-rm -f "$state/current/wallpaper"
-rm -f "$HOME/.local/share/color-schemes/Gesso.colors"
-rm -f "$HOME/.local/share/konsole/Gesso.colorscheme"
-rm -f "$HOME/.local/share/konsole/Gesso.profile"
-
-name_file=$state/current/theme.name
-if [[ ! -f $name_file ]]; then
-  exit 0
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
+  plasma-apply-colorscheme "$scheme"
 fi
-
-scheme=BreezeDark
-colors=$state/current/theme/colors.toml
-if [[ -f $colors ]]; then
-  mode=$(grep -E '^mode[[:space:]]*=' "$colors" | head -n1 | cut -d'"' -f2) || true
-  if [[ $mode == "light" ]]; then
-    scheme=BreezeLight
-  fi
-fi
-rm -f "$name_file"
-
-if [[ -n ${GESSO_THEME_HEADLESS:-} ]]; then
-  exit 0
-fi
-
-if ! command -v plasma-apply-colorscheme >/dev/null; then
-  printf 'plasma-apply-colorscheme is not available\n' >&2
-  exit 1
-fi
-plasma-apply-colorscheme "$scheme"
 
 gtk_backup=$state/gtk-color-scheme
 if [[ -f $gtk_backup ]] && command -v gsettings >/dev/null; then
@@ -131,5 +154,21 @@ if [[ -f $gtk_backup ]] && command -v gsettings >/dev/null; then
   else
     gsettings reset org.gnome.desktop.interface color-scheme || true
   fi
-  rm -f "$gtk_backup"
 fi
+
+# Cleanup recovery state and generated artifacts only after all restoration steps succeed
+rm -f "$konsole_backup"
+rm -f "$gtk_backup"
+rm -f "$state/wallpaper-baseline"
+rm -f "$state/ghostty-baseline-theme" "$state/ghostty-baseline-state"
+rm -f "$state/kitty-baseline-state" "$state/foot-baseline-state"
+for backup in "${vscode_backups[@]}"; do
+  rm -f "$backup"
+done
+rm -rf "$undo_dir"
+rm -f "$state/current/wallpaper"
+rm -f "$state/current/theme.name"
+rm -rf "$state/current/theme"
+rm -f "$HOME/.local/share/color-schemes/Gesso.colors"
+rm -f "$HOME/.local/share/konsole/Gesso.colorscheme"
+rm -f "$HOME/.local/share/konsole/Gesso.profile"

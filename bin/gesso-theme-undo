@@ -13,16 +13,18 @@ bin_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 export PATH="$bin_dir:$PATH"
 
 state=$HOME/.local/state/gesso
-undo_dir=$state/undo
-
-if [[ ! -d $undo_dir ]]; then
-  printf 'No previous theme to undo\n' >&2
-  exit 1
+lock_dir=${XDG_RUNTIME_DIR:-$state}
+lock=$lock_dir/gesso-theme-set.lock
+mkdir -p "$state" "$lock_dir"
+if [[ -z ${GESSO_LOCK_HELD:-} ]]; then
+  exec 9>"$lock"
+  flock 9
+  export GESSO_LOCK_HELD=1
 fi
 
-shopt -s nullglob dotglob
-undo_files=("$undo_dir"/*)
-if ((${#undo_files[@]} == 0)); then
+undo_dir=$state/undo
+
+if [[ ! -d $undo_dir || ! -f $undo_dir/undo-available ]]; then
   printf 'No previous theme to undo\n' >&2
   exit 1
 fi
@@ -38,19 +40,12 @@ if [[ -f $undo_dir/wallpaper ]]; then
 fi
 
 if [[ -n $prev_theme && $prev_theme != "unset" ]]; then
-  if [[ -n $prev_wallpaper ]]; then
-    if [[ -f $prev_wallpaper ]]; then
-      wp_tmp=$(mktemp -d "$state/wp-undo.XXXXXX")
-      cp -f "$prev_wallpaper" "$wp_tmp/$(basename "$prev_wallpaper")"
-      gesso theme set "$prev_theme" --wallpaper "$wp_tmp/$(basename "$prev_wallpaper")"
-      rm -rf "$wp_tmp"
-    elif [[ -n ${GESSO_PATH:-} && -f $GESSO_PATH/themes/$prev_theme/backgrounds/$(basename "$prev_wallpaper") ]]; then
-      gesso theme set "$prev_theme" --wallpaper theme
-    elif [[ -f $HOME/.config/gesso/themes/$prev_theme/backgrounds/$(basename "$prev_wallpaper") ]]; then
-      gesso theme set "$prev_theme" --wallpaper theme
-    else
-      gesso theme set "$prev_theme"
-    fi
+  if [[ -n $prev_wallpaper && -f $prev_wallpaper ]]; then
+    gesso theme set "$prev_theme" --wallpaper "$prev_wallpaper"
+  elif [[ -n $prev_wallpaper && -n ${GESSO_PATH:-} && -f $GESSO_PATH/themes/$prev_theme/backgrounds/$(basename "$prev_wallpaper") ]]; then
+    gesso theme set "$prev_theme" --wallpaper theme
+  elif [[ -n $prev_wallpaper && -f $HOME/.config/gesso/themes/$prev_theme/backgrounds/$(basename "$prev_wallpaper") ]]; then
+    gesso theme set "$prev_theme" --wallpaper theme
   else
     gesso theme set "$prev_theme"
   fi

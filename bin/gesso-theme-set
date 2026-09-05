@@ -125,8 +125,47 @@ lock_dir=${XDG_RUNTIME_DIR:-$HOME/.local/state/gesso}
 lock=$lock_dir/gesso-theme-set.lock
 
 mkdir -p "$state_dir" "$lock_dir"
-exec 9>"$lock"
-flock 9
+if [[ -z ${GESSO_LOCK_HELD:-} ]]; then
+  exec 9>"$lock"
+  flock 9
+  export GESSO_LOCK_HELD=1
+fi
+
+ensure_trailing_newline() {
+  local file=$1
+  if [[ -f $file && -s $file ]]; then
+    python3 -c '
+import sys, os
+path = sys.argv[1]
+try:
+    with open(path, "rb+") as fp:
+        fp.seek(-1, os.SEEK_END)
+        if fp.read(1) != b"\n":
+            fp.seek(0, os.SEEK_END)
+            fp.write(b"\n")
+except Exception:
+    pass
+' "$file" 2>/dev/null || true
+  fi
+}
+
+store_wallpaper() {
+  local src=$1
+  local wallpapers_dir=$HOME/.local/state/gesso/wallpapers
+  mkdir -p "$wallpapers_dir"
+  if [[ $(dirname -- "$src") == "$wallpapers_dir" && -f $src ]]; then
+    printf '%s\n' "$src"
+    return 0
+  fi
+  local hash
+  hash=$(python3 -c 'import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest()[:12])' "$src" 2>/dev/null || true)
+  if [[ -z $hash ]]; then
+    hash="wp"
+  fi
+  local dest="$wallpapers_dir/${hash}-$(basename "$src")"
+  cp -f "$src" "$dest"
+  printf '%s\n' "$dest"
+}
 
 toml_quoted() {
   local file=$1
@@ -247,6 +286,7 @@ if [[ ! -f $konsole_backup ]]; then
   fi
 fi
 if [[ -f $HOME/.config/konsolerc ]]; then
+  ensure_trailing_newline "$HOME/.config/konsolerc"
   if grep -q '^DefaultProfile=' "$HOME/.config/konsolerc"; then
     sed -i 's/^DefaultProfile=.*/DefaultProfile=Gesso.profile/' "$HOME/.config/konsolerc"
   else
@@ -256,12 +296,31 @@ else
   printf '%s\n' '[Desktop Entry]' 'DefaultProfile=Gesso.profile' >"$HOME/.config/konsolerc"
 fi
 
+# Prepare baseline wallpaper backup if not already present
+wallpaper_baseline=$HOME/.local/state/gesso/wallpaper-baseline
+if [[ ! -f $wallpaper_baseline ]]; then
+  curr_wp=
+  if [[ -f $state_dir/wallpaper && -s $state_dir/wallpaper ]]; then
+    curr_wp=$(cat "$state_dir/wallpaper")
+  elif [[ -f $HOME/.config/plasma-org.kde.plasma.desktop-appletsrc ]]; then
+    curr_wp=$(grep -E '^[[:space:]]*Image=' "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" | head -n1 | cut -d= -f2- | sed 's|^file://||' || true)
+  fi
+  if [[ -n $curr_wp ]]; then
+    printf '%s\n' "$curr_wp" >"$wallpaper_baseline"
+  else
+    : >"$wallpaper_baseline"
+  fi
+fi
+
 # Prepare undo state capture before modifying terminal configs or theme state
 rm -rf "$next_undo"
 mkdir -p "$next_undo"
+touch "$next_undo/undo-available"
 
 if [[ -f $state_dir/theme.name ]]; then
   cp "$state_dir/theme.name" "$next_undo/previous-theme.name"
+else
+  printf 'unset\n' >"$next_undo/previous-theme.name"
 fi
 
 prev_wallpaper=
@@ -274,6 +333,7 @@ if [[ -n $prev_wallpaper ]]; then
   printf '%s\n' "$prev_wallpaper" >"$next_undo/wallpaper"
 fi
 
+kitty_baseline=$HOME/.local/state/gesso/kitty-baseline-state
 kitty_state=
 if [[ -f $next/kitty.conf ]]; then
   if command -v kitty >/dev/null || [[ -d $HOME/.config/kitty ]]; then
@@ -287,7 +347,11 @@ if [[ -f $next/kitty.conf ]]; then
       kitty_state="existed"
     else
       kitty_state="added"
+      ensure_trailing_newline "$kitty_conf"
       printf 'include gesso-theme.conf\n' >>"$kitty_conf"
+    fi
+    if [[ ! -f $kitty_baseline ]]; then
+      printf '%s\n' "$kitty_state" >"$kitty_baseline"
     fi
   fi
 fi
@@ -295,6 +359,8 @@ if [[ -n $kitty_state ]]; then
   printf '%s\n' "$kitty_state" >"$next_undo/kitty-state"
 fi
 
+ghostty_baseline_state=$HOME/.local/state/gesso/ghostty-baseline-state
+ghostty_baseline_theme=$HOME/.local/state/gesso/ghostty-baseline-theme
 ghostty_state=
 ghostty_prev_theme=
 if [[ -f $next/ghostty ]]; then
@@ -304,13 +370,24 @@ if [[ -f $next/ghostty ]]; then
     ghostty_conf=$HOME/.config/ghostty/config
     if [[ ! -f $ghostty_conf ]]; then
       ghostty_state="created"
+      if [[ ! -f $ghostty_baseline_state ]]; then
+        printf 'created\n' >"$ghostty_baseline_state"
+      fi
       printf 'theme = Gesso\n' >"$ghostty_conf"
     elif grep -qE '^[[:space:]]*theme[[:space:]]*=' "$ghostty_conf"; then
       ghostty_state="replaced"
       ghostty_prev_theme=$(grep -E '^[[:space:]]*theme[[:space:]]*=' "$ghostty_conf" | head -n1 | sed -E 's/^[[:space:]]*theme[[:space:]]*=[[:space:]]*//')
+      if [[ ! -f $ghostty_baseline_state ]]; then
+        printf 'replaced\n' >"$ghostty_baseline_state"
+        printf '%s\n' "$ghostty_prev_theme" >"$ghostty_baseline_theme"
+      fi
       sed -i -E 's/^[[:space:]]*theme[[:space:]]*=.*/theme = Gesso/' "$ghostty_conf"
     else
       ghostty_state="added"
+      if [[ ! -f $ghostty_baseline_state ]]; then
+        printf 'added\n' >"$ghostty_baseline_state"
+      fi
+      ensure_trailing_newline "$ghostty_conf"
       printf 'theme = Gesso\n' >>"$ghostty_conf"
     fi
   fi
@@ -322,6 +399,7 @@ if [[ $ghostty_state == "replaced" ]]; then
   printf '%s\n' "$ghostty_prev_theme" >"$next_undo/ghostty-theme"
 fi
 
+foot_baseline=$HOME/.local/state/gesso/foot-baseline-state
 foot_state=
 if [[ -f $next/foot.ini ]]; then
   if command -v foot >/dev/null || [[ -d $HOME/.config/foot ]]; then
@@ -330,15 +408,27 @@ if [[ -f $next/foot.ini ]]; then
     foot_conf=$HOME/.config/foot/foot.ini
     if [[ ! -f $foot_conf ]]; then
       foot_state="created"
+      if [[ ! -f $foot_baseline ]]; then
+        printf 'created\n' >"$foot_baseline"
+      fi
       printf '[main]\ninclude = ~/.config/foot/gesso-theme.ini\n' >"$foot_conf"
     elif grep -qE '^[[:space:]]*include[[:space:]]*=[[:space:]]*.*gesso-theme\.ini' "$foot_conf"; then
       foot_state="existed"
+      if [[ ! -f $foot_baseline ]]; then
+        printf 'existed\n' >"$foot_baseline"
+      fi
     else
       foot_state="added"
+      if [[ ! -f $foot_baseline ]]; then
+        printf 'added\n' >"$foot_baseline"
+      fi
       if grep -q '^\[main\]' "$foot_conf"; then
         sed -i '/^\[main\]/a include = ~\/.config\/foot\/gesso-theme.ini' "$foot_conf"
+      elif grep -q -E '^[[:space:]]*\[' "$foot_conf"; then
+        sed -i '1i [main]\ninclude = ~/.config/foot/gesso-theme.ini\n' "$foot_conf"
       else
-        printf 'include = ~/.config/foot/gesso-theme.ini\n' >>"$foot_conf"
+        ensure_trailing_newline "$foot_conf"
+        printf '[main]\ninclude = ~/.config/foot/gesso-theme.ini\n' >>"$foot_conf"
       fi
     fi
   fi
@@ -367,15 +457,12 @@ if [[ $wallpaper_mode == "theme" ]]; then
   shopt -s nullglob
   for wp in "$current/backgrounds"/*; do
     if [[ -f $wp ]]; then
-      applied_wallpaper=$wp
+      applied_wallpaper=$(store_wallpaper "$wp")
       break
     fi
   done
 elif [[ $wallpaper_mode == "custom" ]]; then
-  mkdir -p "$HOME/.local/state/gesso/wallpapers"
-  dest=$HOME/.local/state/gesso/wallpapers/$(basename "$wallpaper_arg")
-  cp -f "$wallpaper_arg" "$dest"
-  applied_wallpaper=$dest
+  applied_wallpaper=$(store_wallpaper "$wallpaper_arg")
 fi
 
 if [[ -n $applied_wallpaper ]]; then
