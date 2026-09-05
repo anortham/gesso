@@ -37,6 +37,12 @@ grep -Fq '"theme", "set"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage cal
 grep -q 'runAsync' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage apply uses runAsync"
 pass "ThemePage wires list and async set"
 
+grep -Fq '"theme", "list", "--json"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme list with --json"
+grep -Fq '"theme", "undo"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme undo"
+grep -Fq '"theme", "restore"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme restore"
+grep -Fq '"--wallpaper"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage supports wallpaper selection"
+pass "ThemePage wires visual gallery and recovery actions"
+
 [[ -f $ROOT/setup/qml/DefaultsPage.qml ]] || fail "DefaultsPage.qml exists"
 grep -q 'catalog-get' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage uses catalog-get"
 grep -q 'default' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage calls default"
