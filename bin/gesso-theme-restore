@@ -35,6 +35,69 @@ if [[ -f $konsole_backup ]]; then
   rm -f "$konsole_backup"
 fi
 
+undo_dir=$state/undo
+kitty_state=
+ghostty_state=
+ghostty_theme=
+foot_state=
+prev_wallpaper=
+if [[ -d $undo_dir ]]; then
+  [[ -f $undo_dir/kitty-state ]] && kitty_state=$(cat "$undo_dir/kitty-state")
+  [[ -f $undo_dir/ghostty-state ]] && ghostty_state=$(cat "$undo_dir/ghostty-state")
+  [[ -f $undo_dir/ghostty-theme ]] && ghostty_theme=$(cat "$undo_dir/ghostty-theme")
+  [[ -f $undo_dir/foot-state ]] && foot_state=$(cat "$undo_dir/foot-state")
+  [[ -f $undo_dir/wallpaper ]] && prev_wallpaper=$(cat "$undo_dir/wallpaper")
+fi
+
+kitty_conf=$HOME/.config/kitty/kitty.conf
+if [[ -f $kitty_conf ]]; then
+  sed -i -E '/^[[:space:]]*include[[:space:]]+.*gesso-theme\.conf/d' "$kitty_conf"
+  if [[ $kitty_state == "created" ]]; then
+    if [[ ! -s $kitty_conf ]] || ! grep -q '[^[:space:]]' "$kitty_conf"; then
+      rm -f "$kitty_conf"
+    fi
+  fi
+fi
+rm -f "$HOME/.config/kitty/gesso-theme.conf"
+
+ghostty_conf=$HOME/.config/ghostty/config
+if [[ -f $ghostty_conf ]]; then
+  if [[ -n $ghostty_theme && $ghostty_theme != "Gesso" ]]; then
+    sed -i -E "s/^[[:space:]]*theme[[:space:]]*=.*/theme = $ghostty_theme/" "$ghostty_conf"
+  else
+    sed -i -E '/^[[:space:]]*theme[[:space:]]*=[[:space:]]*Gesso[[:space:]]*$/d' "$ghostty_conf"
+  fi
+  if [[ $ghostty_state == "created" ]]; then
+    if [[ ! -s $ghostty_conf ]] || ! grep -q '[^[:space:]]' "$ghostty_conf"; then
+      rm -f "$ghostty_conf"
+    fi
+  fi
+fi
+rm -f "$HOME/.config/ghostty/themes/Gesso"
+
+foot_conf=$HOME/.config/foot/foot.ini
+if [[ -f $foot_conf ]]; then
+  sed -i -E '/^[[:space:]]*include[[:space:]]*=[[:space:]]*.*gesso-theme\.ini/d' "$foot_conf"
+  if [[ $foot_state == "created" ]]; then
+    if ! grep -v -E '^[[:space:]]*(\[main\])?[[:space:]]*$' "$foot_conf" | grep -q '[^[:space:]]'; then
+      rm -f "$foot_conf"
+    fi
+  fi
+fi
+rm -f "$HOME/.config/foot/gesso-theme.ini"
+
+if [[ -z ${GESSO_THEME_HEADLESS:-} ]] && command -v plasma-apply-wallpaperimage >/dev/null; then
+  if [[ -n $prev_wallpaper ]]; then
+    plasma-apply-wallpaperimage "$prev_wallpaper" || true
+  fi
+fi
+
+rm -rf "$undo_dir"
+rm -f "$state/current/wallpaper"
+rm -f "$HOME/.local/share/color-schemes/Gesso.colors"
+rm -f "$HOME/.local/share/konsole/Gesso.colorscheme"
+rm -f "$HOME/.local/share/konsole/Gesso.profile"
+
 name_file=$state/current/theme.name
 if [[ ! -f $name_file ]]; then
   exit 0

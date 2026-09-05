@@ -506,3 +506,138 @@ pass "undo records previous wallpaper"
 pass "undo records terminal state markers"
 
 export GESSO_THEME_HEADLESS=1
+
+# --- Task 4 tests: Theme Undo & Baseline Restore ---
+
+theme_cmds=$(gesso theme)
+[[ $theme_cmds == *"theme undo"* ]] || fail "gesso theme lists undo" "$theme_cmds"
+[[ $theme_cmds == *"theme restore"* ]] || fail "gesso theme lists restore" "$theme_cmds"
+pass "gesso theme lists undo and restore"
+
+undo_help=$(gesso theme undo --help)
+[[ $undo_help == *"Usage: gesso theme undo"* ]] || fail "gesso theme undo --help prints usage" "$undo_help"
+pass "gesso theme undo --help prints usage"
+
+rm -rf "$HOME/.local/state/gesso/undo"
+if gesso theme undo >/tmp/gesso-theme-undo-nostate 2>&1; then
+  fail "gesso theme undo without undo state exits non-zero"
+fi
+nostate=$(cat /tmp/gesso-theme-undo-nostate)
+[[ $nostate == *"No previous theme to undo"* ]] || fail "gesso theme undo error message" "$nostate"
+pass "gesso theme undo without undo state exits non-zero with error message"
+
+mkdir -p "$HOME/.local/state/gesso/undo"
+if gesso theme undo >/tmp/gesso-theme-undo-empty 2>&1; then
+  fail "gesso theme undo with empty undo dir exits non-zero"
+fi
+empty_err=$(cat /tmp/gesso-theme-undo-empty)
+[[ $empty_err == *"No previous theme to undo"* ]] || fail "gesso theme undo empty error message" "$empty_err"
+pass "gesso theme undo with empty undo dir exits non-zero"
+
+# Set-then-undo theme rollback (theme-to-theme)
+mkdir -p "$HOME/.config/kitty" "$HOME/.config/ghostty" "$HOME/.config/foot"
+printf 'font_size 12.0\n' >"$HOME/.config/kitty/kitty.conf"
+printf 'font-size = 14\ntheme = Dracula\n' >"$HOME/.config/ghostty/config"
+printf '[main]\nfont=monospace:size=11\n' >"$HOME/.config/foot/foot.ini"
+
+unset GESSO_THEME_HEADLESS
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night --wallpaper "$custom_img"
+[[ $(cat "$HOME/.local/state/gesso/current/theme.name") == "tokyo-night" ]] || fail "theme is tokyo-night"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme set nord --wallpaper "$custom_img2"
+[[ $(cat "$HOME/.local/state/gesso/current/theme.name") == "nord" ]] || fail "theme is nord"
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/custom2.jpg"* ]] || fail "nord wallpaper applied" "$stub"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme undo
+[[ $(cat "$HOME/.local/state/gesso/current/theme.name") == "tokyo-night" ]] || fail "theme restored to tokyo-night" "$(cat "$HOME/.local/state/gesso/current/theme.name")"
+[[ $(cat "$HOME/.local/state/gesso/current/wallpaper") == "$HOME/.local/state/gesso/wallpapers/my-custom-bg.png" ]] || fail "wallpaper restored to my-custom-bg.png"
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $HOME/.local/state/gesso/wallpapers/my-custom-bg.png"* ]] || fail "wallpaper reapplied on undo" "$stub"
+
+kconf=$(cat "$HOME/.config/kitty/kitty.conf")
+[[ $kconf == *"include gesso-theme.conf"* ]] || fail "kitty.conf has include" "$kconf"
+ktpl=$(cat "$HOME/.config/kitty/gesso-theme.conf")
+[[ $ktpl == *"#1a1b26"* ]] || fail "kitty theme conf is tokyo-night" "$ktpl"
+
+gtpl=$(cat "$HOME/.config/ghostty/themes/Gesso")
+[[ $gtpl == *"background = #1a1b26"* ]] || fail "ghostty theme is tokyo-night" "$gtpl"
+
+ftpl=$(cat "$HOME/.config/foot/gesso-theme.ini")
+[[ $ftpl == *"background=1a1b26"* ]] || fail "foot theme is tokyo-night" "$ftpl"
+
+[[ -d $HOME/.local/state/gesso/undo ]] && fail "undo directory removed after successful undo"
+pass "gesso theme set followed by undo restores previous theme name, wallpaper, and terminal configs"
+
+# Undo from first theme restores baseline
+gesso theme restore
+[[ $(gesso theme current) == "unset" ]] || fail "theme current is unset"
+
+printf 'font_size 12.0\n' >"$HOME/.config/kitty/kitty.conf"
+printf 'font-size = 14\ntheme = Dracula\n' >"$HOME/.config/ghostty/config"
+printf '[main]\nfont=monospace:size=11\n' >"$HOME/.config/foot/foot.ini"
+
+gesso theme set tokyo-night
+gesso theme undo
+[[ $(gesso theme current) == "unset" ]] || fail "theme current is unset after undo to baseline"
+kconf=$(cat "$HOME/.config/kitty/kitty.conf")
+[[ $kconf != *"include gesso-theme.conf"* ]] || fail "kitty.conf include removed on undo to baseline" "$kconf"
+[[ $kconf == *"font_size 12.0"* ]] || fail "kitty.conf font_size preserved" "$kconf"
+
+gconf=$(cat "$HOME/.config/ghostty/config")
+[[ $gconf != *"theme = Gesso"* ]] || fail "ghostty config theme = Gesso removed on undo to baseline" "$gconf"
+[[ $gconf == *"theme = Dracula"* ]] || fail "ghostty config restored to Dracula" "$gconf"
+
+fconf=$(cat "$HOME/.config/foot/foot.ini")
+[[ $fconf != *"gesso-theme.ini"* ]] || fail "foot.ini include removed on undo to baseline" "$fconf"
+[[ $fconf == *"font=monospace:size=11"* ]] || fail "foot.ini font preserved" "$fconf"
+
+[[ -d $HOME/.local/state/gesso/undo ]] && fail "undo dir removed"
+pass "undo from first theme restores baseline and terminal configs"
+
+# Restore cleans up terminal configs and removes undo state
+printf 'font_size 12.0\n' >"$HOME/.config/kitty/kitty.conf"
+printf 'font-size = 14\ntheme = Dracula\n' >"$HOME/.config/ghostty/config"
+printf '[main]\nfont=monospace:size=11\n' >"$HOME/.config/foot/foot.ini"
+gesso theme set tokyo-night
+[[ -d $HOME/.local/state/gesso/undo ]] || fail "undo dir exists after set"
+
+gesso theme restore
+[[ $(gesso theme current) == "unset" ]] || fail "theme current is unset after restore"
+[[ -d $HOME/.local/state/gesso/undo ]] && fail "undo dir removed after restore"
+[[ -f $HOME/.local/state/gesso/current/wallpaper ]] && fail "current/wallpaper removed after restore"
+
+kconf=$(cat "$HOME/.config/kitty/kitty.conf")
+[[ $kconf != *"include gesso-theme.conf"* ]] || fail "restore removes include from kitty.conf" "$kconf"
+[[ $kconf == *"font_size 12.0"* ]] || fail "restore keeps other kitty settings" "$kconf"
+
+gconf=$(cat "$HOME/.config/ghostty/config")
+[[ $gconf != *"theme = Gesso"* ]] || fail "restore removes theme = Gesso from ghostty/config" "$gconf"
+[[ $gconf == *"theme = Dracula"* ]] || fail "restore puts back saved ghostty theme" "$gconf"
+[[ $gconf == *"font-size = 14"* ]] || fail "restore keeps other ghostty settings" "$gconf"
+
+fconf=$(cat "$HOME/.config/foot/foot.ini")
+[[ $fconf != *"gesso-theme.ini"* ]] || fail "restore removes include from foot.ini" "$fconf"
+[[ $fconf == *"font=monospace:size=11"* ]] || fail "restore keeps other foot settings" "$fconf"
+
+pass "gesso theme restore cleans up terminal configs and removes undo state"
+
+# Wallpaper restoration on baseline undo
+printf '%s\n' '[Containments][1][Wallpaper][org.kde.image][General]' "Image=file://$custom_img" >"$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+unset GESSO_THEME_HEADLESS
+rm -f "$HOME/gesso-stub.log"
+gesso theme set tokyo-night --wallpaper "$custom_img2"
+[[ -f $HOME/.local/state/gesso/undo/wallpaper ]] || fail "undo wallpaper saved from desktop-appletsrc"
+[[ $(cat "$HOME/.local/state/gesso/undo/wallpaper") == "$custom_img" ]] || fail "undo wallpaper matches desktop-appletsrc"
+
+rm -f "$HOME/gesso-stub.log"
+gesso theme undo
+stub=$(cat "$HOME/gesso-stub.log")
+[[ $stub == *"plasma-apply-wallpaperimage $custom_img"* ]] || fail "undo to baseline reapplies baseline wallpaper" "$stub"
+[[ ! -f $HOME/.local/state/gesso/current/wallpaper ]] || fail "current/wallpaper removed on baseline undo"
+pass "undo to baseline reapplies baseline wallpaper"
+
+export GESSO_THEME_HEADLESS=1
