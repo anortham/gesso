@@ -190,12 +190,12 @@ Revamp `ThemePage.qml` into a visual theme gallery:
 Query `gesso theme list --json` asynchronously on page load. Use Kirigami Card / ItemDelegate components with custom color rectangles for preview swatches. Wire Apply/Undo/Restore buttons to async CLI calls.
 
 **Acceptance criteria:**
-- [ ] Theme preview cards display colors and metadata visually
-- [ ] Wallpaper choice is selectable and passed to `gesso theme set`
-- [ ] "Undo" button triggers `gesso theme undo` and refreshes current theme
-- [ ] "Restore Defaults" button triggers `gesso theme restore`
-- [ ] Operation status and error messages are rendered clearly
-- [ ] `test/cli.d/setup-test.sh` passes and validates ThemePage wiring
+- [x] Theme preview cards display colors and metadata visually
+- [x] Wallpaper choice is selectable and passed to `gesso theme set`
+- [x] "Undo" button triggers `gesso theme undo` and refreshes current theme
+- [x] "Restore Defaults" button triggers `gesso theme restore`
+- [x] Operation status and error messages are rendered clearly
+- [x] `test/cli.d/setup-test.sh` passes and validates ThemePage wiring
 
 ---
 
