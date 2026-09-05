@@ -1,17 +1,95 @@
 #!/bin/bash
 # gesso:summary=List available Gesso themes
-# gesso:args=
+# gesso:args=[--json]
 
 set -euo pipefail
 
 if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
-  printf 'Usage: gesso theme list\n'
+  printf 'Usage: gesso theme list [--json]\n'
   exit 0
 fi
 
 if [[ -z ${GESSO_PATH:-} ]]; then
   printf 'GESSO_PATH is not set\n' >&2
   exit 1
+fi
+
+if [[ $# -gt 1 || ($# -eq 1 && ${1:-} != "--json") ]]; then
+  printf 'Usage: gesso theme list [--json]\n' >&2
+  exit 1
+fi
+
+if [[ ${1:-} == "--json" ]]; then
+  python3 - "$GESSO_PATH/themes" "$HOME/.config/gesso/themes" <<'PY'
+import json
+import sys
+import tomllib
+from pathlib import Path
+
+builtin_root = Path(sys.argv[1])
+user_root = Path(sys.argv[2])
+
+def check_wallpaper(*dirs):
+    for d in dirs:
+        bg = d / "backgrounds"
+        if bg.is_dir():
+            for f in bg.iterdir():
+                if f.is_file() and not f.name.startswith("."):
+                    return True
+    return False
+
+theme_ids = set()
+if builtin_root.is_dir():
+    for p in builtin_root.iterdir():
+        if not p.name.startswith(".") and p.is_dir() and (p / "colors.toml").is_file():
+            theme_ids.add(p.name)
+
+if user_root.is_dir():
+    for p in user_root.iterdir():
+        if not p.name.startswith(".") and p.is_dir() and (p / "colors.toml").is_file():
+            theme_ids.add(p.name)
+
+themes = []
+for theme_id in sorted(theme_ids):
+    b_dir = builtin_root / theme_id
+    u_dir = user_root / theme_id
+
+    data = {}
+    if (b_dir / "colors.toml").is_file():
+        try:
+            data.update(tomllib.loads((b_dir / "colors.toml").read_text(encoding="utf-8")))
+        except Exception:
+            pass
+
+    if (u_dir / "colors.toml").is_file():
+        try:
+            data.update(tomllib.loads((u_dir / "colors.toml").read_text(encoding="utf-8")))
+        except Exception:
+            pass
+
+    name = data.get("name")
+    if not name:
+        name = theme_id.replace("-", " ").replace("_", " ").title()
+
+    palette_keys = ["red", "green", "yellow", "blue", "magenta", "cyan"]
+    palette = [str(data.get(k, "")) for k in palette_keys]
+
+    themes.append({
+        "id": theme_id,
+        "name": str(name),
+        "mode": str(data.get("mode", "dark")),
+        "accent": str(data.get("accent", "")),
+        "background": str(data.get("background", "")),
+        "foreground": str(data.get("foreground", "")),
+        "selection": str(data.get("selection", "")),
+        "muted": str(data.get("muted", "")),
+        "palette": palette,
+        "has_wallpaper": check_wallpaper(u_dir, b_dir),
+    })
+
+print(json.dumps(themes))
+PY
+  exit 0
 fi
 
 declare -A seen=()

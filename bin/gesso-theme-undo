@@ -1,0 +1,55 @@
+#!/bin/bash
+# gesso:summary=Undo the last applied Gesso theme
+# gesso:args=
+
+set -euo pipefail
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  printf 'Usage: gesso theme undo\n'
+  exit 0
+fi
+
+bin_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+export PATH="$bin_dir:$PATH"
+
+state=$HOME/.local/state/gesso
+lock_dir=${XDG_RUNTIME_DIR:-$state}
+lock=$lock_dir/gesso-theme-set.lock
+mkdir -p "$state" "$lock_dir"
+if [[ -z ${GESSO_LOCK_HELD:-} ]]; then
+  exec 9>"$lock"
+  flock 9
+  export GESSO_LOCK_HELD=1
+fi
+
+undo_dir=$state/undo
+
+if [[ ! -d $undo_dir || ! -f $undo_dir/undo-available ]]; then
+  printf 'No previous theme to undo\n' >&2
+  exit 1
+fi
+
+prev_theme=
+if [[ -f $undo_dir/previous-theme.name ]]; then
+  prev_theme=$(cat "$undo_dir/previous-theme.name")
+fi
+
+prev_wallpaper=
+if [[ -f $undo_dir/wallpaper ]]; then
+  prev_wallpaper=$(cat "$undo_dir/wallpaper")
+fi
+
+if [[ -n $prev_theme && $prev_theme != "unset" ]]; then
+  if [[ -n $prev_wallpaper && -f $prev_wallpaper ]]; then
+    gesso theme set "$prev_theme" --wallpaper "$prev_wallpaper"
+  elif [[ -n $prev_wallpaper && -n ${GESSO_PATH:-} && -f $GESSO_PATH/themes/$prev_theme/backgrounds/$(basename "$prev_wallpaper") ]]; then
+    gesso theme set "$prev_theme" --wallpaper theme
+  elif [[ -n $prev_wallpaper && -f $HOME/.config/gesso/themes/$prev_theme/backgrounds/$(basename "$prev_wallpaper") ]]; then
+    gesso theme set "$prev_theme" --wallpaper theme
+  else
+    gesso theme set "$prev_theme"
+  fi
+  rm -rf "$undo_dir"
+else
+  gesso theme restore
+fi

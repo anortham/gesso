@@ -2,7 +2,7 @@
 
 A Fedora KDE add-on. One palette, install-then-set-default, and a coding-agent picker. Not a distro. Not Hyprland.
 
-Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. Phase 5 is done. The v1 gaps closed on 2026-09-01 (`plans/2026-09-01-v1-gaps.md`). COPR publish remains.
+Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read [`docs/layout.md`](docs/layout.md) for where files go. Phase 5 is done. The v1 gaps closed on 2026-09-01 (`plans/2026-09-01-v1-gaps.md`). The theme journey closed on 2026-09-04 (`plans/2026-09-04-theme-journey.md`). COPR publish remains.
 
 ## Start here (new session)
 
@@ -10,7 +10,8 @@ Read [`plans/2026-08-26-product.md`](plans/2026-08-26-product.md) for why. Read 
 2. This file
 3. `docs/layout.md`, `docs/cli.md`, `docs/catalog.md`, `docs/theming.md`, `docs/testing.md`, `docs/packaging.md`
 4. Phase 5 is done (`plans/2026-08-27-phase-5.md`)
-5. The v1 gaps closed on 2026-09-01 (`plans/2026-09-01-v1-gaps.md`). COPR publish remains.
+5. The v1 gaps closed on 2026-09-01 (`plans/2026-09-01-v1-gaps.md`)
+6. The theme journey closed on 2026-09-04 (`plans/2026-09-04-theme-journey.md`). COPR publish remains.
 
 Omarchy (`~/source/omarchy`) is a behavior reference. Steal ideas. Do not copy trees, names, Hyprland, or Quickshell.
 

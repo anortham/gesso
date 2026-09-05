@@ -37,6 +37,12 @@ grep -Fq '"theme", "set"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage cal
 grep -q 'runAsync' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage apply uses runAsync"
 pass "ThemePage wires list and async set"
 
+grep -Fq '"theme", "list", "--json"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme list with --json"
+grep -Fq '"theme", "undo"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme undo"
+grep -Fq '"theme", "restore"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage calls theme restore"
+grep -Fq '"--wallpaper"' "$ROOT/setup/qml/ThemePage.qml" || fail "ThemePage supports wallpaper selection"
+pass "ThemePage wires visual gallery and recovery actions"
+
 [[ -f $ROOT/setup/qml/DefaultsPage.qml ]] || fail "DefaultsPage.qml exists"
 grep -q 'catalog-get' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage uses catalog-get"
 grep -q 'default' "$ROOT/setup/qml/DefaultsPage.qml" || fail "DefaultsPage calls default"
@@ -62,10 +68,34 @@ hits=$(grep -REq 'firefox\.desktop|org\.mozilla\.firefox|org\.chromium\.Chromium
 [[ $hits == "no" ]] || fail "setup tree has no hardcoded catalog ids"
 pass "setup tree has no hardcoded catalog ids"
 
-if grep -RFq 'waitForFinished(-1)' "$ROOT/setup"; then
-  fail "setup has no waitForFinished(-1)"
+if grep -RFq 'waitForFinished' "$ROOT/setup"; then
+  fail "setup has no blocking waitForFinished"
 fi
-pass "setup has no waitForFinished(-1)"
+pass "setup has no blocking waitForFinished"
+
+if grep -RFq 'waitForStarted' "$ROOT/setup"; then
+  fail "setup has no blocking waitForStarted"
+fi
+pass "setup has no blocking waitForStarted"
+
+if grep -RFq 'if (m_process) return;' "$ROOT/setup"; then
+  fail "GessoCli does not lock out on single active process"
+fi
+pass "GessoCli does not lock out on single active process"
+
+grep -Fq 'commandFinished(' "$ROOT/setup/GessoCli.hpp" || fail "GessoCli declares commandFinished signal"
+pass "GessoCli declares commandFinished signal"
+
+grep -Fq 'QJSValue' "$ROOT/setup/GessoCli.hpp" || fail "GessoCli supports QJSValue callback"
+pass "GessoCli supports QJSValue callback"
+
+grep -Fq 'runQueryAsync(' "$ROOT/setup/GessoCli.hpp" || fail "GessoCli declares runQueryAsync"
+pass "GessoCli declares runQueryAsync"
+
+if grep -REq 'tokyo-night|breeze|firefox|chromium|konsole|ghostty|kitty' "$ROOT/setup/GessoCli."*; then
+  fail "GessoCli has no hardcoded theme, app, or terminal policy"
+fi
+pass "GessoCli has no hardcoded theme, app, or terminal policy"
 
 grep -q 'startDetached' "$ROOT/setup/qml/AgentsPage.qml" || fail "Launch Agent uses startDetached"
 grep -q 'gesso-app-present' "$ROOT/setup/qml/AgentsPage.qml" || fail "Launch Agent uses gesso-app-present"
