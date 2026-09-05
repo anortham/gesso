@@ -3,7 +3,7 @@
 **Status:** Complete
 **Plan:** plans/2026-09-04-theme-journey.md
 **Branch:** theme-journey
-**PR:** pending — filled in after PR creation
+**PR:** https://github.com/anortham/gesso/pull/8
 **Duration:** 1h 40m
 **Phases:** 1/1 complete
 **Tasks:** 6/6 complete
@@ -81,5 +81,5 @@
   - `/home/murphy/source/gesso/.worktrees/v1-gaps` — kept, user-owned
 
 ## Next steps
-- Review PR: pending — filled in after PR creation
+- Review PR: https://github.com/anortham/gesso/pull/8
 - Merge `theme-journey` into `main` after user review.
