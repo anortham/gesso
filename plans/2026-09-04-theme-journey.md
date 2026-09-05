@@ -105,10 +105,10 @@ Upgrade `GessoCli` to prevent blocking the Qt event loop and eliminate single-pr
 Refactor `GessoCli` to manage active `QProcess` instances dynamically rather than relying on a single blocking wait or single `m_process` pointer. Expose QML-callable methods that do not freeze the UI.
 
 **Acceptance criteria:**
-- [ ] `GessoCli` does not call blocking `waitForFinished` on the main UI thread during standard queries
-- [ ] Multiple queries or tab switches do not drop results or crash
-- [ ] `setup/` builds cleanly with CMake
-- [ ] Tests in `test/cli.d/setup-test.sh` verify async bridge behavior
+- [x] `GessoCli` does not call blocking `waitForFinished` on the main UI thread during standard queries
+- [x] Multiple queries or tab switches do not drop results or crash
+- [x] `setup/` builds cleanly with CMake
+- [x] Tests in `test/cli.d/setup-test.sh` verify async bridge behavior
 
 ---
 
