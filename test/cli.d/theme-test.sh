@@ -23,6 +23,50 @@ for want in catppuccin-latte catppuccin-mocha gruvbox-dark nord tokyo-night; do
 done
 pass "theme list prints the five first-party themes"
 
+json_out=$(gesso theme list --json)
+validated=$(python3 -c '
+import json, sys
+try:
+    data = json.loads(sys.argv[1])
+except Exception as e:
+    sys.exit(1)
+if not isinstance(data, list) or len(data) != 5:
+    sys.exit(2)
+ids = [t["id"] for t in data]
+if ids != sorted(ids) or "tokyo-night" not in ids or "catppuccin-latte" not in ids:
+    sys.exit(3)
+for t in data:
+    for req in ("id", "name", "mode", "accent", "background", "foreground", "selection", "muted", "palette", "has_wallpaper"):
+        if req not in t:
+            sys.exit(4)
+    if t["mode"] not in ("dark", "light"):
+        sys.exit(5)
+    for c in ("accent", "background", "foreground", "selection", "muted"):
+        if not t[c].startswith("#"):
+            sys.exit(6)
+    if not isinstance(t["palette"], list) or len(t["palette"]) != 6:
+        sys.exit(7)
+    for c in t["palette"]:
+        if not c.startswith("#"):
+            sys.exit(8)
+    if not isinstance(t["has_wallpaper"], bool) or t["has_wallpaper"] is not False:
+        sys.exit(9)
+
+tokyo = next(t for t in data if t["id"] == "tokyo-night")
+if tokyo["name"] != "Tokyo Night" or tokyo["mode"] != "dark" or tokyo["accent"] != "#7aa2f7":
+    sys.exit(10)
+if tokyo["palette"] != ["#f7768e", "#9ece6a", "#e0af68", "#7aa2f7", "#ad8ee6", "#449dab"]:
+    sys.exit(11)
+
+latte = next(t for t in data if t["id"] == "catppuccin-latte")
+if latte["name"] != "Catppuccin Latte" or latte["mode"] != "light" or latte["accent"] != "#8839ef":
+    sys.exit(12)
+
+print("valid")
+' "$json_out" 2>/dev/null || true)
+[[ $validated == "valid" ]] || fail "theme list --json schema and data integrity" "$json_out"
+pass "theme list --json schema and data integrity"
+
 if gesso theme set not-a-theme >/tmp/gesso-theme-set-unknown 2>&1; then
   fail "unknown theme exits non-zero"
 fi
@@ -64,6 +108,10 @@ gesso theme set tokyo-night
 overlay=$(cat "$HOME/.local/state/gesso/current/theme/colors.toml")
 [[ $overlay == *"#ff00aa"* ]] || fail "user overlay wins on colors.toml" "$overlay"
 pass "user overlay wins on colors.toml"
+
+overlay_accent=$(gesso theme list --json | python3 -c 'import json, sys; print(next(t for t in json.load(sys.stdin) if t["id"] == "tokyo-night")["accent"])')
+[[ $overlay_accent == "#ff00aa" ]] || fail "theme list --json reflects user overlay" "$overlay_accent"
+pass "theme list --json reflects user overlay"
 
 mkdir -p "$HOME/.config/gesso/themed"
 printf 'accent={{ accent }}\nstrip={{ accent_strip }}\nrgb={{ accent_rgb }}\nmix={{ mix background foreground 15%% }}\n' >"$HOME/.config/gesso/themed/extra.conf.tpl"
@@ -288,6 +336,9 @@ chmod +x "$HOME/gesso-stubs/plasma-apply-wallpaperimage"
 mkdir -p "$HOME/.config/gesso/themes/wall-night/backgrounds"
 cp "$ROOT/themes/tokyo-night/colors.toml" "$HOME/.config/gesso/themes/wall-night/colors.toml"
 touch "$HOME/.config/gesso/themes/wall-night/backgrounds/b.png" "$HOME/.config/gesso/themes/wall-night/backgrounds/a.png"
+wall_has_bg=$(gesso theme list --json | python3 -c 'import json, sys; print(next(t for t in json.load(sys.stdin) if t["id"] == "wall-night")["has_wallpaper"])')
+[[ $wall_has_bg == "True" ]] || fail "theme list --json detects wallpaper availability" "$wall_has_bg"
+pass "theme list --json detects wallpaper availability"
 rm -f "$HOME/gesso-stub.log"
 gesso theme set wall-night
 stub=$(cat "$HOME/gesso-stub.log")
