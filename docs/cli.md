@@ -51,11 +51,15 @@ Unknown keys are ignored. A missing summary fails `./test/cli` metadata lint.
 
 Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. Phase 2 adds `default` and `pkg`. Phase 3 adds `gesso setup` and `gesso theme current`. Phase 4 adds `gesso default agent` and `gesso agent`. Phase 5 adds `gesso theme restore`.
 
-`gesso theme list` prints first-party themes from `$GESSO_PATH/themes/` and user themes from `~/.config/gesso/themes/`. Five first-party themes ship: `tokyo-night`, `catppuccin-mocha`, `catppuccin-latte`, `gruvbox-dark`, and `nord`. `catppuccin-latte` is light. The rest are dark.
+`gesso theme list [--json]` prints first-party themes from `$GESSO_PATH/themes/` and user themes from `~/.config/gesso/themes/`. Five first-party themes ship: `tokyo-night`, `catppuccin-mocha`, `catppuccin-latte`, `gruvbox-dark`, and `nord`. `catppuccin-latte` is light. The rest are dark. Passing `--json` outputs an array of JSON objects containing palette swatches, dark/light mode, and wallpaper availability.
 
 `gesso theme current` prints the name in `~/.local/state/gesso/current/theme.name`, or `unset` when that file is missing or empty.
 
-`gesso theme restore` undoes what `gesso theme set` changed on the live system. It restores `workbench.colorCustomizations` in both VS Code locations (`~/.config/Code/User` and `~/.var/app/com.visualstudio.code/config/Code/User`) from the backups under `~/.local/state/gesso/`. It puts the previous Konsole `DefaultProfile=` back in `~/.config/konsolerc`. It deletes `theme.name`, so `gesso theme current` prints `unset`. When Gesso last set a theme and a session is available, it applies `BreezeLight` for `light` mode or `BreezeDark` otherwise, then puts the GTK color scheme back. It does not restore the wallpaper. Missing `theme.name` exits 0. Headless tests skip Plasma and GTK and still exit 0. It keeps `~/.config/gesso` and `~/.local/state/gesso/current/theme`. Run it before `dnf remove` if Gesso is the active scheme. See [`theming.md`](theming.md) for the backup files.
+`gesso theme set <name> [--wallpaper <keep|theme|path>]` applies a theme across Plasma, Konsole, VS Code, Kitty, Ghostty, and Foot, enabling terminal configs and recording undo state in `~/.local/state/gesso/undo/`.
+
+`gesso theme undo` rolls back the immediate prior Gesso theme application, restoring previous theme settings, wallpaper, and terminal configs from `~/.local/state/gesso/undo/`.
+
+`gesso theme restore` undoes what `gesso theme set` changed on the live system. It restores `workbench.colorCustomizations` in both VS Code locations (`~/.config/Code/User` and `~/.var/app/com.visualstudio.code/config/Code/User`) from the backups under `~/.local/state/gesso/`. It puts the previous Konsole `DefaultProfile=` back in `~/.config/konsolerc`. It removes theme includes from `kitty.conf`, `ghostty/config`, and `foot.ini`. It deletes `theme.name`, so `gesso theme current` prints `unset`. When Gesso last set a theme and a session is available, it applies `BreezeLight` for `light` mode or `BreezeDark` otherwise, then puts the GTK color scheme back and restores the baseline wallpaper if recorded. Missing `theme.name` exits 0. Headless tests skip Plasma and GTK and still exit 0. It keeps `~/.config/gesso` and `~/.local/state/gesso/current/theme`. Run it before `dnf remove` if Gesso is the active scheme. See [`theming.md`](theming.md) for the backup files.
 
 `gesso default browser firefox` installs Firefox when it is missing, then sets the XDG default browser to the desktop id from `gesso-app-present --desktop firefox`. `gesso default terminal [id]` uses the same catalog loop for `xdg-terminals.list`. `gesso default editor [id]` writes the id to `~/.local/state/gesso/defaults/editor`, then runs `xdg-mime default <desktop> <mime>...` for twelve text types (`text/plain`, `text/markdown`, `text/x-shellscript`, `application/x-shellscript`, `text/x-python`, `application/json`, `text/xml`, `application/xml`, `text/css`, `text/javascript`, `application/toml`, `application/x-yaml`). The desktop id comes from `gesso-app-present --desktop <id>`, so a Flatpak editor gets its Flatpak desktop id. No id prints the current catalog id, or `unset`.
 
@@ -92,6 +96,7 @@ gesso commands
 gesso theme
 gesso theme list --help
 gesso theme current
+gesso theme undo
 gesso theme restore
 gesso default browser --help
 gesso default browser firefox

@@ -215,6 +215,6 @@ Query `gesso theme list --json` asynchronously on page load. Use Kirigami Card /
 - Run full branch verification: `./test/all` and CMake build of `setup`.
 
 **Acceptance criteria:**
-- [ ] Documentation accurately reflects all new CLI flags, commands, and Setup UI behavior
-- [ ] `./test/all` exits 0 with all checks passing
-- [ ] `setup` compiles cleanly with CMake
+- [x] Documentation accurately reflects all new CLI flags, commands, and Setup UI behavior
+- [x] `./test/all` exits 0 with all checks passing
+- [x] `setup` compiles cleanly with CMake
