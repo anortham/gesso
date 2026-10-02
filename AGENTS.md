@@ -45,7 +45,7 @@ Metadata lives in the first 80 comment lines of each `bin/gesso-*` file:
 - User overlays: `~/.config/gesso/`
 - Generated state: `~/.local/state/gesso/`
 - Runtime Plasma/Konsole/app files Gesso writes: `~/.local/share/` (so Kinoite/Aurora can use the same code)
-- `~/.local/bin/mise` is the one write outside `~/.config`, `~/.local/state`, and `~/.local/share`. `gesso default agent` installs `mise` there per user.
+- Agent integration may install `~/.local/bin/mise` and create `gesso` skill symlinks in the supported per-user agent discovery directories documented in `docs/skills.md`. These are the narrow exceptions to the user-path rule; preserve unrelated agent files and same-named user skills.
 - Never write to `/etc`
 
 ## Privilege
@@ -59,7 +59,7 @@ Metadata lives in the first 80 comment lines of each `bin/gesso-*` file:
 See [`docs/testing.md`](docs/testing.md).
 
 - `./test/cli` — router, metadata, theme list/set/restore, default apps, pkg add, catalog, setup, agent, and packaging against a fake `$HOME`
-- `./test/all` — runs `./test/cli` (more suites later)
+- `./test/all` — runs `./test/cli` and the Node.js Setup feedback check
 - New command tests: `test/cli.d/<area>-test.sh`
 - No Plasma, no DBus, no `dnf`, no `flatpak`, no `curl` in unit tests. Stub binaries on `PATH`.
 

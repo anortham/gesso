@@ -69,6 +69,8 @@ Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. 
 
 `gesso agent` launches that default with the skip-prompt argv from `data/agents.toml`. It prefers an existing host executable, including vendor installs in `~/.local/bin`. Otherwise it finds `mise` on `PATH`, else at `~/.local/bin/mise`, verifies the managed executable, and launches with `<mise> exec -- <argv>`. With no default it exits 1 and prints `gesso default agent`. If `$PWD` is `$HOME` and `$HOME/Work` exists, launch changes to that directory. `GESSO_AGENT_DRY_RUN=1` prints `cwd=` and `argv=` instead of `exec`. Tests use that. Production launch uses `exec`. Use `gesso agent -- "your prompt"` to seed an interactive session; all words after `--` are joined into one prompt. Unrecognized arguments are rejected. Default commands accept at most one id, and `pkg add` requires exactly one.
 
+`gesso agent skills` registers the packaged customization skill in supported per-user discovery directories. `gesso agent skills --remove` unlinks only symlinks that point to the current install’s packaged skill. This helper is hidden from general command listings. Agent selection and real launches call it automatically; help, current-choice queries, and dry-run launches do not. See [`skills.md`](skills.md) for supported agents and custom locations.
+
 `gesso setup` opens the Kirigami Setup window. `--help` works with no Qt. The launcher checks `$GESSO_SETUP_BIN`, then `setup/build/bin/gesso-setup` and `setup/build/gesso-setup` under `$GESSO_ROOT` or `$GESSO_PATH`, then `/usr/libexec/gesso/gesso-setup`. It does not scan `PATH`. If no binary is found, stderr prints `cmake -S setup -B setup/build && cmake --build setup/build` and the command exits 1. That build puts the binary at `setup/build/bin/gesso-setup`, because KDECMakeSettings sets the runtime output directory to `bin/`. The window has Theme, Defaults, Agents, and Install pages, in that order. Each page is built once and stays alive across tab switches. Every action execs `gesso-*`. Theme Apply, default changes, and installs run asynchronously. The Agents page lists catalog ids, sets the default with `gesso default agent <id>`, and launches with `konsole --hold -e gesso agent` when Konsole is present. Launch is disabled while the default is `unset`.
 
 ## Hidden helpers
@@ -76,6 +78,7 @@ Phase 0 implements the router and `gesso theme list`. Phase 1 adds `theme set`. 
 These commands set `# gesso:hidden=true`. They stay callable and stay out of listings. The Setup app and the user-facing commands call them.
 
 - `gesso-catalog-get <id> <field>`, `--kind <kind>`, or `--json --kind <kind>`: read one field, list ids of one kind, or print a JSON array of the rows of one kind from `data/apps.toml`.
+- `gesso-agent-skills [--remove]`: register or unlink the installed-system customization skill.
 - `gesso-agent-get <id> <field>`, `--list`, or `--json`: read one field, list ids, or print a JSON array of every row from `data/agents.toml`.
 - `gesso-app-present [--desktop] <id>` or `--list --kind <kind>`: exit 0 when the app is on the host or as a Flatpak, print its desktop id, or print every present id of one kind in one process.
 - `gesso-cmd-present <command>...`: exit 0 when every named command is on `PATH`.

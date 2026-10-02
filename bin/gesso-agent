@@ -106,5 +106,6 @@ if [[ -n ${GESSO_AGENT_DRY_RUN:-} ]]; then
   printf 'argv=%s\n' "${argv[*]}"
   exit 0
 else
+  gesso-agent-skills
   exec "${argv[@]}"
 fi

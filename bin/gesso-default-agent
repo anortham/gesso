@@ -106,6 +106,8 @@ else
   fi
 fi
 
+gesso-agent-skills
+
 mkdir -p "$(dirname "$agent_file")"
 printf '%s\n' "$id" > "$agent_file"
 

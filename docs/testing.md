@@ -42,6 +42,8 @@ The CLI driver also runs `agent-catalog-test.sh` (literal prompt arguments for t
 
 `node test/setup-feedback.js` executes the actual JavaScript functions extracted from the Defaults, Install, and Agents QML pages using Node’s built-in assertion and VM modules. It checks visible feedback for silent command failures and keeps each page busy through its refresh. It runs in `./test/all`; Node.js is a test dependency, not a runtime requirement for Gesso.
 
+`test/cli.d/skills-test.sh` covers automatic registration on selection and launch, dedicated and custom discovery paths, idempotency, user-skill preservation, packaged roots with spaces, missing payloads, and selective removal. The shared fixture unsets agent path/profile overrides so unit tests cannot register skills in the developer’s real agent directories.
+
 ## Stubs
 
 Never call real `dnf`, `flatpak`, `pkexec`, `sudo`, `xdg-settings`, `xdg-mime`, `plasma-apply-colorscheme`, `plasma-apply-wallpaperimage`, `gsettings`, `curl`, or `mise` in unit tests. Drop executable stubs in the test `PATH` that append argv to `$HOME/gesso-stub.log`.

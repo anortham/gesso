@@ -1,6 +1,7 @@
 #!/bin/bash
 
 gesso_test_init() {
+  unset CLAUDE_CONFIG_DIR PI_CODING_AGENT_DIR PI_CONFIG_DIR OMP_PROFILE PI_PROFILE
   local libdir stub sys cmd path
   libdir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
   ROOT=$(cd -- "$libdir/.." && pwd)

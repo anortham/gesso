@@ -1,0 +1,57 @@
+#!/bin/bash
+# gesso:summary=Register or remove the packaged Gesso agent skill
+# gesso:args=[--remove]
+# gesso:hidden=true
+
+set -euo pipefail
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  printf 'Usage: gesso agent skills [--remove]\n'
+  exit 0
+fi
+if (($# > 1)) || [[ ${1:-} != "" && ${1:-} != "--remove" ]]; then
+  printf 'Usage: gesso agent skills [--remove]\n' >&2
+  exit 1
+fi
+if [[ -z ${GESSO_PATH:-} ]]; then
+  printf 'GESSO_PATH is not set\n' >&2
+  exit 1
+fi
+
+source_skill=$(readlink -m -- "$GESSO_PATH/default/agents/skills/gesso")
+if [[ ${1:-} != "--remove" && ! -f $source_skill/SKILL.md ]]; then
+  printf 'Gesso skill not found: %s\n' "$source_skill/SKILL.md" >&2
+  exit 1
+fi
+
+omp_base=$HOME/${PI_CONFIG_DIR:-.omp}
+omp_profile=${OMP_PROFILE-${PI_PROFILE:-}}
+omp_profile=${omp_profile#"${omp_profile%%[![:space:]]*}"}
+omp_profile=${omp_profile%"${omp_profile##*[![:space:]]}"}
+if [[ -z $omp_profile || $omp_profile == "default" ]]; then
+  omp_agent_dir=${PI_CODING_AGENT_DIR:-$omp_base/agent}
+else
+  omp_agent_dir=$omp_base/profiles/$omp_profile/agent
+fi
+
+skill_dirs=(
+  "$HOME/.agents/skills"
+  "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
+  "$HOME/.gemini/antigravity-cli/skills"
+  "$omp_agent_dir/skills"
+)
+for dir in "${skill_dirs[@]}"; do
+  target=$dir/gesso
+  if [[ ${1:-} == "--remove" ]]; then
+    if [[ -L $target && $(readlink -- "$target") == "$source_skill" ]]; then
+      rm -- "$target"
+    fi
+  elif [[ -L $target && $(readlink -- "$target") == "$source_skill" ]]; then
+    continue
+  elif [[ -e $target || -L $target ]]; then
+    printf 'Keeping existing skill: %s\n' "$target" >&2
+  else
+    mkdir -p -- "$dir"
+    ln -s -- "$source_skill" "$target"
+  fi
+done

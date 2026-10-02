@@ -48,6 +48,7 @@ launch = ["grok", "--permission-mode", "bypassPermissions"]
 prompt_flag = "--"
 ```
 
+- Selecting or launching an agent registers the bundled Gesso skill. See [skills.md](skills.md) for discovery locations and the Ori fallback.
 - No agent is default until the user runs `gesso default agent <id>`.
 - Existing host executables, including vendor installs in `~/.local/bin`, are used directly and are never replaced by a mise install. Mise shims alone do not count as installed host tools.
 - When a host executable is absent, if `mise` is missing from `PATH` and `~/.local/bin/mise`, `gesso default agent` installs it per user with `curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh`. No `dnf`, `sudo`, or `pkexec`.

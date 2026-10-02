@@ -11,6 +11,7 @@ gesso/
   bin/gesso-*               one executable per command, hidden helpers included
   data/apps.toml            browser/terminal/editor/install catalog (phase 2)
   data/agents.toml          coding-agent catalog (phase 4)
+  default/agents/skills/gesso/SKILL.md  installed-system customization skill
   default/themed/*.tpl      templates rendered by theme set: Plasma, Konsole, Kitty, Ghostty, Foot, VS Code
   themes/<name>/colors.toml first-party palettes (five in v1)
   setup/                    Kirigami Gesso Setup (phase 3)
@@ -57,6 +58,8 @@ The bash launcher stays `/usr/bin/gesso-setup` in the `gesso` package. It execs 
 |---|---|
 | User themes, hooks, template overrides | `~/.config/gesso/` |
 | Generated current theme, editor default | `~/.local/state/gesso/` |
+| Agent skill source | `/usr/share/gesso/default/agents/skills/gesso/` |
+| Agent discovery links | Per-user locations in [skills.md](skills.md) |
 | Default agent name | `~/.config/gesso/defaults/agent` |
 | Plasma color scheme Gesso wrote | `~/.local/share/color-schemes/` |
 | Konsole scheme and profile Gesso wrote | `~/.local/share/konsole/` |

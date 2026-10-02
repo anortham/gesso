@@ -10,7 +10,7 @@ dnf install gesso-plasma
 gesso setup
 ```
 
-`<owner>` is a placeholder until the COPR exists. Do not invent a COPR user. Two RPMs ship: `gesso` (CLI, themes, templates, catalogs) and `gesso-plasma` (the Setup app). `dnf install gesso-plasma` pulls both. Five themes ship: `tokyo-night`, `catppuccin-mocha`, `catppuccin-latte` (light), `gruvbox-dark`, and `nord`. Eleven coding agents are available, including Cursor CLI, Antigravity, Oh My Pi, and Ori. Existing native agent installs are preserved; missing agents install per user with a current `mise`. There is no agents RPM. If Gesso is the active scheme, run `gesso theme restore` before `dnf remove`.
+`<owner>` is a placeholder until the COPR exists. Do not invent a COPR user. Two RPMs ship: `gesso` (CLI, themes, templates, catalogs) and `gesso-plasma` (the Setup app). `dnf install gesso-plasma` pulls both. Five themes ship: `tokyo-night`, `catppuccin-mocha`, `catppuccin-latte` (light), `gruvbox-dark`, and `nord`. Eleven coding agents are available, including Cursor CLI, Antigravity, Oh My Pi, and Ori. Existing native agent installs are preserved; missing agents install per user with a current `mise`. There is no agents RPM. Selecting or launching an agent registers the bundled Gesso customization skill for supported agents. If Gesso is the active scheme, run `gesso theme restore` before `dnf remove`.
 
 ## New session
 
@@ -25,6 +25,7 @@ Open this repo and follow `AGENTS.md`.
 | [docs/layout.md](docs/layout.md) | File tree and install paths |
 | [docs/cli.md](docs/cli.md) | Router and command metadata |
 | [docs/theming.md](docs/theming.md) | Palette, templates, Plasma apply |
+| [docs/skills.md](docs/skills.md) | Installed-system customization skill and agent discovery |
 | [docs/catalog.md](docs/catalog.md) | App / default / agent catalog |
 | [docs/packaging.md](docs/packaging.md) | RPMs, COPR, uninstall |
 | [docs/testing.md](docs/testing.md) | Test suites |

@@ -13,6 +13,8 @@ The spec is [`packaging/gesso.spec`](../packaging/gesso.spec). Human COPR steps 
 
 `dnf install gesso-plasma` is the user-facing install. It pulls `gesso`. Agent scripts live in `gesso`. There is no `gesso-agents` package. `mise` is not a Fedora package, so no RPM can Require it. `gesso default agent` installs `mise` per user into `~/.local/bin/mise` on first use with `curl -fsSL https://mise.run`.
 
+The customization skill is shipped in the existing `default/` payload at `/usr/share/gesso/default/agents/skills/gesso/SKILL.md`. Registration runs per user when an agent is selected or launched; RPM scriptlets do not write into users’ homes. See [skills.md](skills.md).
+
 Every `BuildRequires` and `Requires` name exists in Fedora 44. `qt6-qtdeclarative-devel` provides QuickControls2, so the spec does not list `qt6-qtquickcontrols2-devel`.
 
 ## Install paths
@@ -23,7 +25,7 @@ Do not ship `/etc` or `environment.d`. The router sets `$GESSO_PATH=/usr/share/g
 
 ## Uninstall
 
-If Gesso is the active color scheme, run `gesso theme restore` before `dnf remove gesso-plasma gesso`. Restore applies `BreezeDark` or `BreezeLight` from the last theme `mode`, or `BreezeDark` if unknown. RPM scriptlets do not call restore.
+Run `gesso agent skills --remove` before `dnf remove gesso-plasma gesso` to remove its current discovery links. If Gesso is the active color scheme, also run `gesso theme restore` first. Restore applies `BreezeDark` or `BreezeLight` from the last theme `mode`, or `BreezeDark` if unknown. RPM scriptlets do not call restore.
 
 `dnf remove gesso-plasma gesso` must leave Plasma usable.
 
