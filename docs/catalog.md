@@ -27,7 +27,7 @@ Rules:
 - `gesso-app-present <id>` is the presence check. Host first: `gesso-cmd-present` on `command`. Else `flatpak info` on `flatpak`.
 - `command` is the host binary. Helix is `hx`.
 - `desktop_id` is the host desktop file. When only Flatpak is present, defaults use `<flatpak>.desktop`. `gesso-app-present --desktop` returns `desktop_id` when that file exists in the XDG application directories, and falls back to `<flatpak>.desktop` when it does not, because Fedora 44 renamed some desktop files to reverse-DNS ids (`firefox.desktop` became `org.mozilla.firefox.desktop`).
-- `gesso default editor <id>` writes `id` to `~/.local/state/gesso/defaults/editor`, then runs `xdg-mime default <desktop> <mime>...` with the desktop id from `gesso-app-present --desktop <id>` for these types: `text/plain`, `text/markdown`, `text/x-shellscript`, `application/x-shellscript`, `text/x-python`, `application/json`, `text/xml`, `application/xml`, `text/css`, `text/javascript`, `application/toml`, `application/x-yaml`. The launch command is `command`.
+- `gesso default editor <id>` runs `xdg-mime default <desktop> <mime>...` with the desktop id from `gesso-app-present --desktop <id>` for these types: `text/plain`, `text/markdown`, `text/x-shellscript`, `application/x-shellscript`, `text/x-python`, `application/json`, `text/xml`, `application/xml`, `text/css`, `text/javascript`, `application/toml`, `application/x-yaml`. It writes `id` to `~/.local/state/gesso/defaults/editor` only after the MIME update succeeds, preserving the previous selection on failure. The launch command is `command`.
 
 v1 browser ids: `firefox`, `chromium`, `chrome`, `brave`, `brave-origin`, `edge`. Terminal ids: `konsole`, `ghostty`, `kitty`, `foot`. Editor ids: `code`, `kate`, `nvim`, `helix`, `zed`.
 
@@ -49,9 +49,10 @@ prompt_flag = "--"
 ```
 
 - No agent is default until the user runs `gesso default agent <id>`.
-- If `mise` is missing from `PATH` and `~/.local/bin/mise`, `gesso default agent` installs it per user with `curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh`. No `dnf`, `sudo`, or `pkexec`.
-- If `mise which <launch_bin>` fails, install is `mise use -g <mise>`. Recheck `mise which`. Write the default file only after that check succeeds.
-- Launch is `mise exec -- <launch...>` when `mise` is on PATH. Else the host binary.
+- Existing host executables, including vendor installs in `~/.local/bin`, are used directly and are never replaced by a mise install. Mise shims alone do not count as installed host tools.
+- When a host executable is absent, if `mise` is missing from `PATH` and `~/.local/bin/mise`, `gesso default agent` installs it per user with `curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh`. No `dnf`, `sudo`, or `pkexec`.
+- When no native executable exists and `mise which <launch_bin>` fails, install with `mise use -g <mise>`, then recheck `mise which`. Save the default only after a native or managed executable is available.
+- Launch uses an existing host executable first, otherwise `mise exec -- <launch...>` after verifying the managed executable exists. An unrelated mise installation does not force host agents through mise.
 - Launch cwd: if `$PWD` is `$HOME` and `$HOME/Work` exists, `cd` there (agents refuse to trust `$HOME`).
 - `gesso agent` with none chosen exits 1 and prints `gesso default agent <name>`. The Setup app opens the Agents page instead.
 
@@ -62,9 +63,17 @@ Launch flags (keep in the TOML, not in a `case`):
 | claude | `--permission-mode auto` |
 | grok | `--permission-mode bypassPermissions` |
 | codex | `--ask-for-approval never` |
-| opencode | `--auto` |
+| opencode | `--auto` / `--prompt` for an initial prompt |
 | copilot | `--allow-all` |
 | crush | `--yolo` / `crush run` when a prompt is passed |
+| cursor-agent | `--force --trust` / `agent --` before a prompt |
+| agy | `--dangerously-skip-permissions` / `--prompt-interactive` before a prompt |
+| omp | `--auto-approve` / `--` before a prompt |
+| ori | `ori code` / `--interactive --prompt` for an initial prompt |
+
+Eleven agents ship: Grok, Claude, Codex, OpenCode, Copilot, Crush, Pi, Cursor CLI, Antigravity, Oh My Pi, and Ori. Catalog tool names follow the [mise registry](https://mise.jdx.dev/registry); use a current mise release for newly added registry entries. Older mise versions can lack Cursor or Ori even when the current registry lists them.
+
+`gesso agent -- "your prompt"` passes the prompt as one argument using the selected agent’s catalog flags. Cursor explicitly names its `agent` subcommand so a prompt such as `help` does not run a management command. Ori includes `--interactive` to keep its terminal UI open after the first prompt.
 
 ## Install-then-default
 

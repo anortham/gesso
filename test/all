@@ -11,4 +11,11 @@ else
   printf 'PASS test/cli\n'
 fi
 
+if ! node "$ROOT/test/setup-feedback.js"; then
+  printf 'FAIL test/setup-feedback.js\n' >&2
+  status=1
+else
+  printf 'PASS test/setup-feedback.js\n'
+fi
+
 exit $status

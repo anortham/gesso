@@ -13,6 +13,11 @@ if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
   exit 0
 fi
 
+if (($# > 1)); then
+  usage >&2
+  exit 2
+fi
+
 agent_file=$HOME/.config/gesso/defaults/agent
 
 if (($# == 0)); then
@@ -39,6 +44,27 @@ launch=$(gesso-agent-get "$id" launch)
 label=$(gesso-agent-get "$id" label)
 launch_bin=${launch%% *}
 
+find_host_agent() {
+  local bin=$1 candidate mise_data mise_shims
+  if [[ -f $HOME/.local/bin/$bin && -x $HOME/.local/bin/$bin ]]; then
+    printf '%s\n' "$HOME/.local/bin/$bin"
+    return 0
+  fi
+  mise_data=${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}
+  mise_shims=${mise_data%/}/shims
+  while IFS= read -r candidate; do
+    if [[ $candidate != /* ]]; then
+      candidate=$PWD/$candidate
+    fi
+    if [[ ${candidate%/*} == "$mise_shims" ]]; then
+      continue
+    fi
+    printf '%s\n' "$candidate"
+    return 0
+  done < <(type -P -a "$bin")
+  return 1
+}
+
 find_mise() {
   if command -v mise; then
     return 0
@@ -50,29 +76,33 @@ find_mise() {
   fi
 }
 
-if mise=$(find_mise); then
+if find_host_agent "$launch_bin" >/dev/null; then
   :
 else
-  if ! curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh; then
-    printf 'Could not install mise\n' >&2
-    exit 1
-  fi
   if mise=$(find_mise); then
     :
   else
-    printf 'Could not install mise\n' >&2
-    exit 1
+    if ! curl -fsSL https://mise.run | MISE_INSTALL_PATH=$HOME/.local/bin/mise sh; then
+      printf 'Could not install mise\n' >&2
+      exit 1
+    fi
+    if mise=$(find_mise); then
+      :
+    else
+      printf 'Could not install mise\n' >&2
+      exit 1
+    fi
   fi
-fi
 
-if ! "$mise" which "$launch_bin" >/dev/null 2>&1; then
-  if ! "$mise" use -g "$spec"; then
-    printf 'Could not install %s with mise\n' "$label" >&2
-    exit 1
-  fi
   if ! "$mise" which "$launch_bin" >/dev/null 2>&1; then
-    printf 'Could not install %s with mise\n' "$label" >&2
-    exit 1
+    if ! "$mise" use -g "$spec"; then
+      printf 'Could not install %s with mise\n' "$label" >&2
+      exit 1
+    fi
+    if ! "$mise" which "$launch_bin" >/dev/null 2>&1; then
+      printf 'Could not install %s with mise\n' "$label" >&2
+      exit 1
+    fi
   fi
 fi
 

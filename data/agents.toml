@@ -23,6 +23,7 @@ id = "opencode"
 label = "OpenCode"
 mise = "opencode"
 launch = ["opencode", "--auto"]
+prompt_flag = "--prompt"
 
 [[agent]]
 id = "copilot"
@@ -42,3 +43,31 @@ id = "pi"
 label = "Pi"
 mise = "pi"
 launch = ["pi"]
+
+[[agent]]
+id = "cursor-agent"
+label = "Cursor CLI"
+mise = "cursor-agent"
+launch = ["cursor-agent", "--force", "--trust"]
+prompt_launch = ["cursor-agent", "--force", "--trust", "agent", "--"]
+
+[[agent]]
+id = "agy"
+label = "Antigravity"
+mise = "antigravity-cli"
+launch = ["agy", "--dangerously-skip-permissions"]
+prompt_flag = "--prompt-interactive"
+
+[[agent]]
+id = "omp"
+label = "Oh My Pi"
+mise = "github:can1357/oh-my-pi"
+launch = ["omp", "--auto-approve"]
+prompt_flag = "--"
+
+[[agent]]
+id = "ori"
+label = "Ori"
+mise = "ori"
+launch = ["ori", "code"]
+prompt_launch = ["ori", "code", "--interactive", "--prompt"]

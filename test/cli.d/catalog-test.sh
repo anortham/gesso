@@ -34,8 +34,8 @@ import json, sys
 rows = json.load(sys.stdin)
 print(len(rows), " ".join(r["id"] for r in rows))
 ')
-[[ $got == "7 grok claude codex opencode copilot crush pi" ]] || fail "agent json lists seven agents with grok" "$got"
-pass "agent json lists seven agents with grok"
+[[ $got == "11 grok claude codex opencode copilot crush pi cursor-agent agy omp ori" ]] || fail "agent json lists all eleven agents" "$got"
+pass "agent json lists all eleven agents"
 
 got=$(gesso-agent-get --json | python3 -c '
 import json, sys

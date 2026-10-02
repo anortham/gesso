@@ -24,6 +24,7 @@ find_package(Qt6 REQUIRED COMPONENTS
 find_package(KF6 REQUIRED COMPONENTS Kirigami)
 
 ecm_find_qmlmodule(org.kde.kirigami REQUIRED)
+ecm_find_qmlmodule(QtQuick.Dialogs REQUIRED)
 
 qt_add_executable(gesso-setup
   main.cpp

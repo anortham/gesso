@@ -44,6 +44,11 @@ bool GessoCli::busy() const
   return m_activeMutationProcess != nullptr || !m_mutationQueue.isEmpty();
 }
 
+QString GessoCli::localFilePath(const QUrl &url) const
+{
+  return url.toLocalFile();
+}
+
 QVariantMap GessoCli::run(const QStringList &args)
 {
   return runBinary(QStringLiteral("gesso"), args);

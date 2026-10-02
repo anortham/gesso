@@ -30,8 +30,15 @@ Kirigami.ScrollablePage {
     if (result.exitCode == 0)
       return false
     if (errorText.length === 0)
-      errorText = result.stderr
+      errorText = failureMessage(result)
     return true
+  }
+
+  function failureMessage(result) {
+    var detail = result.stderr.trim() || result.stdout.trim()
+    if (detail.length > 0)
+      return detail + " (exit code " + result.exitCode + ")"
+    return "Command failed with exit code " + result.exitCode
   }
 
   function parseRows(result) {
@@ -92,12 +99,12 @@ Kirigami.ScrollablePage {
     target: gessoCli
     enabled: page.busy
     function onFinished(result) {
-      page.busy = false
       if (result.exitCode != 0) {
-        page.errorText = result.stderr
-        return
+        page.recordError(result)
+      } else {
+        page.loadApps()
       }
-      page.loadApps()
+      page.busy = false
     }
   }
 

@@ -10,7 +10,7 @@ dnf install gesso-plasma
 gesso setup
 ```
 
-`<owner>` is a placeholder until the COPR exists. Do not invent a COPR user. Two RPMs ship: `gesso` (CLI, themes, templates, catalogs) and `gesso-plasma` (the Setup app). `dnf install gesso-plasma` pulls both. Five themes ship: `tokyo-night`, `catppuccin-mocha`, `catppuccin-latte` (light), `gruvbox-dark`, and `nord`. Coding agents install per user with `mise`; there is no agents RPM. If Gesso is the active scheme, run `gesso theme restore` before `dnf remove`.
+`<owner>` is a placeholder until the COPR exists. Do not invent a COPR user. Two RPMs ship: `gesso` (CLI, themes, templates, catalogs) and `gesso-plasma` (the Setup app). `dnf install gesso-plasma` pulls both. Five themes ship: `tokyo-night`, `catppuccin-mocha`, `catppuccin-latte` (light), `gruvbox-dark`, and `nord`. Eleven coding agents are available, including Cursor CLI, Antigravity, Oh My Pi, and Ori. Existing native agent installs are preserved; missing agents install per user with a current `mise`. There is no agents RPM. If Gesso is the active scheme, run `gesso theme restore` before `dnf remove`.
 
 ## New session
 
@@ -28,4 +28,5 @@ Open this repo and follow `AGENTS.md`.
 | [docs/catalog.md](docs/catalog.md) | App / default / agent catalog |
 | [docs/packaging.md](docs/packaging.md) | RPMs, COPR, uninstall |
 | [docs/testing.md](docs/testing.md) | Test suites |
+| [docs/omarchy-review-2026-10-02.md](docs/omarchy-review-2026-10-02.md) | October Omarchy comparison and polish decisions |
 | [docs/adr/](docs/adr/) | Locked decisions |

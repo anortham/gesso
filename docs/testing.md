@@ -7,7 +7,7 @@ Non-graphical tests must run on a machine with no Plasma session. That includes 
 | Command | Owns |
 |---|---|
 | `./test/cli` | Router, metadata lint, theme list/set/restore, default/pkg, catalog helpers, setup, agent, and packaging against a fake `$HOME` |
-| `./test/all` | Runs `./test/cli`, later other suites, continues after a failure, non-zero if any failed |
+| `./test/all` | Runs `./test/cli` and the Setup feedback check using Node.js, continues after a failure, non-zero if any failed |
 
 There is no graphical acceptance suite in v1. Do not open a nested Plasma to prove theme set. File generation plus a stub `plasma-apply-colorscheme` on `PATH` is the proof. Setup tests do not open a window and do not run cmake.
 
@@ -36,6 +36,12 @@ Suites do not share `$HOME`.
 
 The setup suite does not open a window and does not run cmake. The packaging suite does not run `rpmbuild`, `mock`, or `copr-cli`.
 
+## October polish checks
+
+The CLI driver also runs `agent-catalog-test.sh` (literal prompt arguments for the new agents and OpenCode), `agent-host-test.sh` (native installs, mise shims, and invalid arguments), `arguments-test.sh` (reject excess app ids before side effects), `default-failure-test.sh` (preserve editor state on a failed MIME update), and `theme-failure-test.sh` (validate both VS Code targets before touching the desktop or publishing backups).
+
+`node test/setup-feedback.js` executes the actual JavaScript functions extracted from the Defaults, Install, and Agents QML pages using Node’s built-in assertion and VM modules. It checks visible feedback for silent command failures and keeps each page busy through its refresh. It runs in `./test/all`; Node.js is a test dependency, not a runtime requirement for Gesso.
+
 ## Stubs
 
 Never call real `dnf`, `flatpak`, `pkexec`, `sudo`, `xdg-settings`, `xdg-mime`, `plasma-apply-colorscheme`, `plasma-apply-wallpaperimage`, `gsettings`, `curl`, or `mise` in unit tests. Drop executable stubs in the test `PATH` that append argv to `$HOME/gesso-stub.log`.
@@ -50,7 +56,7 @@ Three stubs are suite-local. `test/cli.d/agent-test.sh` moves the `mise` stub as
 
 ## CI
 
-[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on push to `main` and on pull requests. Both jobs run in a `registry.fedoraproject.org/fedora:44` container. Job `cli` installs `bash`, `python3`, `util-linux`, and `git`, then runs `./test/all`. Job `setup` installs `cmake`, `extra-cmake-modules`, `gcc-c++`, `kf6-kirigami-devel`, `qt6-qtbase-devel`, and `qt6-qtdeclarative-devel`, then runs `cmake -S setup -B build` and `cmake --build build`. Neither job runs `rpmbuild` or COPR.
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on push to `main` and on pull requests. Both jobs run in a `registry.fedoraproject.org/fedora:44` container. Job `cli` installs `bash`, `python3`, `util-linux`, `git`, and `nodejs`, then runs `./test/all`. Job `setup` installs `cmake`, `extra-cmake-modules`, `gcc-c++`, `kf6-kirigami-devel`, `qt6-qtbase-devel`, and `qt6-qtdeclarative-devel`, then runs `cmake -S setup -B build` and `cmake --build build`. Neither job runs `rpmbuild` or COPR.
 
 ## What not to test in v1
 

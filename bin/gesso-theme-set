@@ -176,6 +176,8 @@ toml_quoted() {
 vscode_dirs=("$HOME/.config/Code/User" "$HOME/.var/app/com.visualstudio.code/config/Code/User")
 vscode_backups=("$HOME/.local/state/gesso/vscode-colorCustomizations.json" "$HOME/.local/state/gesso/vscode-flatpak-colorCustomizations.json")
 vscode_staged=("" "")
+vscode_backup_staged=("" "")
+vscode_backup_dir=
 
 rm -rf "$next"
 mkdir -p "$next"
@@ -209,19 +211,25 @@ fi
 
 live_colors=$HOME/.local/share/color-schemes/Gesso.colors
 aside=
+live_colors_published=
 fail_publish() {
   local staged
-  if [[ -n $aside ]]; then
-    cp "$aside" "$live_colors"
-    rm -f "$aside"
-  else
-    rm -f "$live_colors"
+  if [[ -n $live_colors_published ]]; then
+    if [[ -n $aside ]]; then
+      cp "$aside" "$live_colors"
+      rm -f "$aside"
+    else
+      rm -f "$live_colors"
+    fi
   fi
   for staged in "${vscode_staged[@]}"; do
     if [[ -n $staged ]]; then
       rm -f "$staged"
     fi
   done
+  if [[ -n $vscode_backup_dir ]]; then
+    rm -rf "$vscode_backup_dir"
+  fi
   rm -rf "$next" "$next_undo"
   if (($# > 0)); then
     printf '%s\n' "$1" >&2
@@ -229,11 +237,32 @@ fail_publish() {
   exit 1
 }
 
+if [[ -f $next/vscode.json ]]; then
+  for i in "${!vscode_dirs[@]}"; do
+    if [[ -d ${vscode_dirs[i]} ]]; then
+      if [[ -z $vscode_backup_dir ]]; then
+        vscode_backup_dir=$(mktemp -d "$HOME/.local/state/gesso/vscode.XXXXXX")
+      fi
+      vscode_staged[i]=$(mktemp "$HOME/.local/state/gesso/settings.json.XXXXXX")
+      if [[ -f ${vscode_backups[i]} ]]; then
+        backup_target=${vscode_backups[i]}
+      else
+        vscode_backup_staged[i]=$vscode_backup_dir/$i.json
+        backup_target=${vscode_backup_staged[i]}
+      fi
+      if ! gesso-vscode-colors merge "$next/vscode.json" "${vscode_dirs[i]}/settings.json" "$backup_target" "${vscode_staged[i]}"; then
+        fail_publish
+      fi
+    fi
+  done
+fi
+
 mkdir -p "$HOME/.local/share/color-schemes"
 if [[ -f $live_colors ]]; then
   aside=$(mktemp "$HOME/.local/state/gesso/Gesso.colors.XXXXXX")
   cp "$live_colors" "$aside"
 fi
+live_colors_published=1
 if [[ -f $next/Gesso.colors ]]; then
   cp "$next/Gesso.colors" "$live_colors"
 fi
@@ -255,17 +284,6 @@ if [[ -z ${GESSO_THEME_HEADLESS:-} ]]; then
   if ! plasma-apply-colorscheme Gesso; then
     fail_publish
   fi
-fi
-
-if [[ -f $next/vscode.json ]]; then
-  for i in "${!vscode_dirs[@]}"; do
-    if [[ -d ${vscode_dirs[i]} ]]; then
-      vscode_staged[i]=$(mktemp "$HOME/.local/state/gesso/settings.json.XXXXXX")
-      if ! gesso-vscode-colors merge "$next/vscode.json" "${vscode_dirs[i]}/settings.json" "${vscode_backups[i]}" "${vscode_staged[i]}"; then
-        fail_publish
-      fi
-    fi
-  done
 fi
 
 mkdir -p "$HOME/.local/share/konsole" "$HOME/.config"
@@ -439,11 +457,17 @@ fi
 
 for i in "${!vscode_dirs[@]}"; do
   if [[ -n ${vscode_staged[i]} ]]; then
+    if [[ -n ${vscode_backup_staged[i]} && ! -f ${vscode_backups[i]} ]]; then
+      mv "${vscode_backup_staged[i]}" "${vscode_backups[i]}"
+    fi
     cp "$next/vscode.json" "${vscode_dirs[i]}/gesso-theme.json"
     mv "${vscode_staged[i]}" "${vscode_dirs[i]}/settings.json"
     vscode_staged[i]=
   fi
 done
+if [[ -n $vscode_backup_dir ]]; then
+  rm -rf "$vscode_backup_dir"
+fi
 
 rm -rf "$current"
 mv "$next" "$current"

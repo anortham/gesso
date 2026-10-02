@@ -1,16 +1,21 @@
 #!/bin/bash
 # gesso:summary=Launch the default coding agent
-# gesso:args=
+# gesso:args=[-- prompt]
 
 set -euo pipefail
 
 usage() {
-  printf 'Usage: gesso agent\n'
+  printf 'Usage: gesso agent [-- prompt]\n'
 }
 
 if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
   usage
   exit 0
+fi
+
+if (($# > 0)) && [[ $1 != "--" ]]; then
+  usage >&2
+  exit 2
 fi
 
 agent_file=$HOME/.config/gesso/defaults/agent
@@ -24,7 +29,7 @@ if [[ -z $id ]]; then
 fi
 
 prompt=""
-if (($# > 0)) && [[ $1 == "--" ]]; then
+if (($# > 0)); then
   shift
   if (($# > 0)); then
     prompt="$*"
@@ -58,14 +63,38 @@ find_mise() {
   fi
 }
 
-if mise=$(find_mise); then
-  argv=("$mise" exec -- "${argv[@]}")
-else
-  bin=${argv[0]}
-  if ! gesso-cmd-present "$bin"; then
-    printf '%s is not installed\n' "$bin" >&2
+find_host_agent() {
+  local bin=$1 candidate mise_data mise_shims
+  if [[ -f $HOME/.local/bin/$bin && -x $HOME/.local/bin/$bin ]]; then
+    printf '%s\n' "$HOME/.local/bin/$bin"
+    return 0
+  fi
+  mise_data=${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}
+  mise_shims=${mise_data%/}/shims
+  while IFS= read -r candidate; do
+    if [[ $candidate != /* ]]; then
+      candidate=$PWD/$candidate
+    fi
+    if [[ ${candidate%/*} == "$mise_shims" ]]; then
+      continue
+    fi
+    printf '%s\n' "$candidate"
+    return 0
+  done < <(type -P -a "$bin")
+  return 1
+}
+
+if host_agent=$(find_host_agent "${argv[0]}"); then
+  argv[0]=$host_agent
+elif mise=$(find_mise); then
+  if ! "$mise" which "${argv[0]}" >/dev/null 2>&1; then
+    printf '%s is not installed\n' "${argv[0]}" >&2
     exit 1
   fi
+  argv=("$mise" exec -- "${argv[@]}")
+else
+  printf '%s is not installed\n' "${argv[0]}" >&2
+  exit 1
 fi
 
 if [[ $PWD == $HOME && -d $HOME/Work ]]; then

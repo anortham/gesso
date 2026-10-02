@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:44
     steps:
-      - run: dnf install -y bash python3 util-linux git
+      - run: dnf install -y bash python3 util-linux git nodejs
       - uses: actions/checkout@v4
       - run: ./test/all
 

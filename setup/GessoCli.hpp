@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QUrl>
 #include <QVariantMap>
 
 class QProcess;
@@ -29,6 +30,7 @@ public:
   ~GessoCli() override;
 
   bool busy() const;
+  Q_INVOKABLE QString localFilePath(const QUrl &url) const;
 
   Q_INVOKABLE QVariantMap run(const QStringList &args);
   Q_INVOKABLE QVariantMap runBinary(const QString &program, const QStringList &args);

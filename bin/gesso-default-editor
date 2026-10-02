@@ -8,6 +8,16 @@ usage() {
   printf 'Usage: gesso default editor [id]\n'
 }
 
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+if (($# > 1)); then
+  usage >&2
+  exit 1
+fi
+
 # Fedora 44 ships qtpaths6 and qtpaths-qt6 but no bare qtpaths, and xdg-utils
 # calls qtpaths on a KDE session. Unsetting KDE_SESSION_VERSION trips a
 # separate xdg-utils bug, so put a qtpaths on PATH for the xdg-* calls.
@@ -19,11 +29,6 @@ if [[ -n ${KDE_SESSION_VERSION:-} ]] && ! command -v qtpaths >/dev/null; then
     ln -s "$qtpaths_real" "$qtpaths_shim/qtpaths"
     PATH="$qtpaths_shim:$PATH"
   fi
-fi
-
-if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
-  usage
-  exit 0
 fi
 
 editor_file=$HOME/.local/state/gesso/defaults/editor
@@ -60,9 +65,6 @@ if ! gesso-app-present "$id"; then
   gesso pkg add "$id"
 fi
 
-mkdir -p "$(dirname "$editor_file")"
-printf '%s\n' "$id" > "$editor_file"
-
 mime_types=(
   text/plain
   text/markdown
@@ -79,6 +81,9 @@ mime_types=(
 )
 desktop_id=$(gesso-app-present --desktop "$id")
 xdg-mime default "$desktop_id" "${mime_types[@]}"
+
+mkdir -p "$(dirname "$editor_file")"
+printf '%s\n' "$id" > "$editor_file"
 
 if command -v notify-send >/dev/null; then
   notify-send "$label is now the default editor"

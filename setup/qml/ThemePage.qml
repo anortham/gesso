@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls as Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
@@ -451,6 +452,13 @@ Kirigami.Page {
           text: page.customWallpaperPath
           onTextChanged: page.customWallpaperPath = text
         }
+
+        Controls.Button {
+          text: "Browse…"
+          icon.name: "document-open"
+          enabled: !page.busy && !gessoCli.busy
+          onClicked: wallpaperPicker.open()
+        }
       }
     }
 
@@ -491,5 +499,16 @@ Kirigami.Page {
         onClicked: page.applySelected()
       }
     }
+  }
+
+  FileDialog {
+    id: wallpaperPicker
+    title: "Select Custom Wallpaper"
+    fileMode: FileDialog.OpenFile
+    nameFilters: [
+      "Images (*.png *.jpg *.jpeg *.webp *.bmp *.gif)",
+      "All files (*)"
+    ]
+    onAccepted: page.customWallpaperPath = gessoCli.localFilePath(wallpaperPicker.selectedFile)
   }
 }
